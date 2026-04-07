@@ -11,9 +11,9 @@ const Machine = sequelize.define('Machine', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    areaId: {
+    area_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
             model: 'areas',
             key: 'id'

@@ -33,10 +33,10 @@ async function seedProduction() {
         if (plants.length === 0) {
             const solpack = await Plant.create({ name: 'SOLPACK' });
             await Area.bulkCreate([
-                { name: 'EXTRUSIÓN 1', plantId: solpack.id },
-                { name: 'EXTRUSIÓN 2', plantId: solpack.id },
-                { name: 'CORTE Y REBOBINADO', plantId: solpack.id },
-                { name: 'SERVICIOS AUXILIARES', plantId: solpack.id }
+                { name: 'EXTRUSIÓN 1', plant_id: solpack.id },
+                { name: 'EXTRUSIÓN 2', plant_id: solpack.id },
+                { name: 'CORTE Y REBOBINADO', plant_id: solpack.id },
+                { name: 'SERVICIOS AUXILIARES', plant_id: solpack.id }
             ]);
             console.log('✅ Basic Plants and Areas created.');
         }

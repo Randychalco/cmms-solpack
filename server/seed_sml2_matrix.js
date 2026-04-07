@@ -1,4 +1,4 @@
-const db = require('./src/config/db');
+const { ChecklistTemplate } = require('./src/models');
 
 const sml2MatrixConfig = {
     sections: [
@@ -132,18 +132,23 @@ const sml2MatrixConfig = {
 
 async function run() {
     try {
-        const check = await db.query("SELECT id FROM checklist_templates WHERE name = 'SML 2'");
-        if (check.rows.length > 0) {
-            await db.query(
-                "UPDATE checklist_templates SET items = $1, layout = $2, asset_category = $3 WHERE name = $4",
-                [JSON.stringify(sml2MatrixConfig), 'sml2_matrix', 'EXTRUSION_2_SML2', 'SML 2']
-            );
+        const [template, created] = await ChecklistTemplate.findOrCreate({
+            where: { name: 'SML 2' },
+            defaults: {
+                asset_category: 'EXTRUSION_2_SML2',
+                layout: 'sml2_matrix',
+                items: sml2MatrixConfig
+            }
+        });
+
+        if (!created) {
             console.log('✅ Plantilla SML 2 matricial ACTUALIZADA con éxito');
+            await template.update({
+                items: sml2MatrixConfig,
+                layout: 'sml2_matrix',
+                asset_category: 'EXTRUSION_2_SML2'
+            });
         } else {
-            await db.query(
-                "INSERT INTO checklist_templates (name, asset_category, items, layout) VALUES ($1, $2, $3, $4)",
-                ['SML 2', 'EXTRUSION_2_SML2', JSON.stringify(sml2MatrixConfig), 'sml2_matrix']
-            );
             console.log('✅ Nueva Plantilla SML 2 matricial CREADA con éxito');
         }
     } catch (e) {

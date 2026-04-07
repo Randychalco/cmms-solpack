@@ -27,16 +27,16 @@ const syncDatabase = async () => {
         // Define Associations
 
         // Plant <-> Area
-        Plant.hasMany(Area, { foreignKey: 'plantId', onDelete: 'CASCADE' });
-        Area.belongsTo(Plant, { foreignKey: 'plantId' });
+        Plant.hasMany(Area, { foreignKey: 'plant_id', onDelete: 'CASCADE' });
+        Area.belongsTo(Plant, { foreignKey: 'plant_id' });
 
         // Area <-> Machine
-        Area.hasMany(Machine, { foreignKey: 'areaId', onDelete: 'CASCADE' });
-        Machine.belongsTo(Area, { foreignKey: 'areaId' });
+        Area.hasMany(Machine, { foreignKey: 'area_id', onDelete: 'CASCADE' });
+        Machine.belongsTo(Area, { foreignKey: 'area_id' });
 
         // Machine <-> SubMachine
-        Machine.hasMany(SubMachine, { foreignKey: 'machineId', onDelete: 'CASCADE' });
-        SubMachine.belongsTo(Machine, { foreignKey: 'machineId' });
+        Machine.hasMany(SubMachine, { foreignKey: 'machine_id', onDelete: 'CASCADE' });
+        SubMachine.belongsTo(Machine, { foreignKey: 'machine_id' });
 
         // Machine <-> RepairRecord
         Machine.hasMany(RepairRecord, { foreignKey: 'machine_id', onDelete: 'CASCADE' });
@@ -87,8 +87,8 @@ const syncDatabase = async () => {
         PreventiveExecution.belongsTo(Area, { foreignKey: 'area_id' });
 
         // Sync models with database
-        await sequelize.sync({ force: true });
-        console.log('Database synced successfully with FORCE: TRUE.');
+        await sequelize.sync({ alter: true });
+        console.log('Database synced successfully.');
     } catch (error) {
         console.error('Unable to connect to the database:', error);
     }

@@ -1,8 +1,8 @@
-const db = require('./src/config/db');
+const { ChecklistTemplate } = require('./src/models');
 
 async function seedCortadoraChecklists() {
     try {
-        console.log('Seeding Cortadora Checklists (Webtec 1 & 2)...');
+        console.log('Seeding Cortadora Checklists (Webtec 1 & 2) using Sequelize...');
 
         const columns = [
             { id: 'param', label: 'PARÁMETRO TÉCNICO', type: 'readonly' },
@@ -87,21 +87,24 @@ async function seedCortadoraChecklists() {
         for (const machine of machines) {
             const templateName = `RUTINA DE INSPECCION GENERAL - Cortadora ${machine}`;
 
-            const existing = await db.query('SELECT id FROM checklist_templates WHERE name = $1', [templateName]);
+            const [template, created] = await ChecklistTemplate.findOrCreate({
+                where: { name: templateName },
+                defaults: {
+                    asset_category: 'CINTAS_CORTADORAS',
+                    layout: 'sml2_matrix',
+                    items: checklistItems
+                }
+            });
 
-            if (existing.rows.length > 0) {
+            if (!created) {
                 console.log(`- Template '${templateName}' already exists. Updating...`);
-                await db.query(`
-                    UPDATE checklist_templates 
-                    SET items = $1, layout = 'sml2_matrix', asset_category = 'CINTAS_CORTADORAS'
-                    WHERE name = $2
-                `, [JSON.stringify(checklistItems), templateName]);
+                await template.update({
+                    items: checklistItems,
+                    layout: 'sml2_matrix',
+                    asset_category: 'CINTAS_CORTADORAS'
+                });
             } else {
-                console.log(`- Creating template: '${templateName}'`);
-                await db.query(`
-                    INSERT INTO checklist_templates (name, asset_category, layout, items)
-                    VALUES ($1, $2, $3, $4)
-                `, [templateName, 'CINTAS_CORTADORAS', 'sml2_matrix', JSON.stringify(checklistItems)]);
+                console.log(`- Created template: '${templateName}'`);
             }
         }
 

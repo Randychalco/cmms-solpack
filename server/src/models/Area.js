@@ -11,9 +11,9 @@ const Area = sequelize.define('Area', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    plantId: {
+    plant_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
             model: 'plants',
             key: 'id'

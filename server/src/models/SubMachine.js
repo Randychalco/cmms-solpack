@@ -11,9 +11,9 @@ const SubMachine = sequelize.define('SubMachine', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    machineId: {
+    machine_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
             model: 'machines',
             key: 'id'
