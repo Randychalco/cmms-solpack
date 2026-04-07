@@ -12,6 +12,8 @@ const PurchaseRequest = require('./PurchaseRequest');
 const PreventivePlan = require('./PreventivePlan');
 const PreventiveExecution = require('./PreventiveExecution');
 const StandardTask = require('./StandardTask');
+const ChecklistTemplate = require('./ChecklistTemplate');
+const ChecklistExecution = require('./ChecklistExecution');
 
 // StandardTask associations
 Machine.hasMany(StandardTask, { foreignKey: 'machine_id' });
@@ -57,9 +59,15 @@ const syncDatabase = async () => {
         SubMachine.hasMany(WorkOrder, { foreignKey: 'sub_machine_id', onDelete: 'SET NULL' });
         WorkOrder.belongsTo(SubMachine, { foreignKey: 'sub_machine_id' });
 
+        // Checklist Associations
+        ChecklistTemplate.hasMany(ChecklistExecution, { foreignKey: 'template_id', onDelete: 'CASCADE' });
+        ChecklistExecution.belongsTo(ChecklistTemplate, { foreignKey: 'template_id' });
+
+        WorkOrder.hasOne(ChecklistExecution, { foreignKey: 'wo_id', onDelete: 'CASCADE' });
+        ChecklistExecution.belongsTo(WorkOrder, { foreignKey: 'wo_id' });
+
         // WorkOrder <-> User
         WorkOrder.belongsTo(User, { as: 'Requester', foreignKey: 'requester_id' });
-        // WorkOrder.belongsTo(User, { as: 'Technician', foreignKey: 'technician_id' });
 
         // User <-> PurchaseRequest
         User.hasMany(PurchaseRequest, { foreignKey: 'requester_id', onDelete: 'SET NULL' });
@@ -77,15 +85,6 @@ const syncDatabase = async () => {
 
         PreventiveExecution.belongsTo(Plant, { foreignKey: 'plant_id' });
         PreventiveExecution.belongsTo(Area, { foreignKey: 'area_id' });
-
-        // Drop stale enum types that block ALTER TABLE (PostgreSQL limitation)
-        try {
-            await sequelize.query(`ALTER TABLE "users" ALTER COLUMN "status" DROP DEFAULT;`);
-            await sequelize.query(`ALTER TABLE "users" ALTER COLUMN "status" TYPE VARCHAR(20) USING "status"::VARCHAR;`);
-            await sequelize.query(`DROP TYPE IF EXISTS "enum_users_status";`);
-        } catch (e) {
-            // Ignore if already VARCHAR or type doesn't exist
-        }
 
         // Sync models with database
         await sequelize.sync({ force: true });
@@ -110,5 +109,7 @@ module.exports = {
     PreventivePlan,
     PreventiveExecution,
     StandardTask,
+    ChecklistTemplate,
+    ChecklistExecution,
     syncDatabase,
 };
