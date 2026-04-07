@@ -88,8 +88,8 @@ const syncDatabase = async () => {
         }
 
         // Sync models with database
-        await sequelize.sync({ force: true });
-        console.log('Database synced successfully with FORCE: TRUE.');
+        await sequelize.sync({ alter: true });
+        console.log('Database synced successfully.');
     } catch (error) {
         console.error('Unable to connect to the database:', error);
     }
