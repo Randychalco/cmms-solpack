@@ -18,7 +18,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Plants',
+            model: 'plants',
             key: 'id'
         }
     },
@@ -26,7 +26,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Areas',
+            model: 'areas',
             key: 'id'
         }
     },
@@ -34,7 +34,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Machines',
+            model: 'machines',
             key: 'id'
         }
     },
@@ -42,7 +42,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'SubMachines',
+            model: 'sub_machines',
             key: 'id'
         }
     },
@@ -147,7 +147,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
         comment: 'BAJO, MEDIO, ALTO, CRITICO'
     },
 }, {
-    tableName: 'WorkOrders',
+    tableName: 'work_orders',
     timestamps: true,
 });
 

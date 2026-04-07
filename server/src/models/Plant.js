@@ -12,6 +12,9 @@ const Plant = sequelize.define('Plant', {
         allowNull: false,
         unique: true,
     },
+}, {
+    tableName: 'plants',
+    timestamps: false
 });
 
 module.exports = Plant;

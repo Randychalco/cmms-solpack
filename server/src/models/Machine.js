@@ -15,10 +15,13 @@ const Machine = sequelize.define('Machine', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Areas',
+            model: 'areas',
             key: 'id'
         }
     }
+}, {
+    tableName: 'machines',
+    timestamps: false
 });
 
 module.exports = Machine;

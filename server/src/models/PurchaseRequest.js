@@ -32,7 +32,7 @@ const PurchaseRequest = sequelize.define('PurchaseRequest', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Machines',
+            model: 'machines',
             key: 'id'
         },
         comment: 'Opcional: máquina a la que se destinará el repuesto'
@@ -68,7 +68,7 @@ const PurchaseRequest = sequelize.define('PurchaseRequest', {
         }
     }
 }, {
-    tableName: 'PurchaseRequests',
+    tableName: 'purchase_requests',
     timestamps: true,
 });
 

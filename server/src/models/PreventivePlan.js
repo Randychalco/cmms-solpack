@@ -19,7 +19,7 @@ const PreventivePlan = sequelize.define('PreventivePlan', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Machines',
+            model: 'machines',
             key: 'id'
         }
     },
@@ -41,7 +41,7 @@ const PreventivePlan = sequelize.define('PreventivePlan', {
         defaultValue: true
     }
 }, {
-    tableName: 'PreventivePlans',
+    tableName: 'preventive_plans',
     timestamps: true,
 });
 

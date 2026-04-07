@@ -15,10 +15,13 @@ const SubMachine = sequelize.define('SubMachine', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Machines',
+            model: 'machines',
             key: 'id'
         }
     }
+}, {
+    tableName: 'sub_machines',
+    timestamps: false
 });
 
 module.exports = SubMachine;

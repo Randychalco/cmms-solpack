@@ -15,10 +15,13 @@ const Area = sequelize.define('Area', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Plants',
+            model: 'plants',
             key: 'id'
         }
     }
+}, {
+    tableName: 'areas',
+    timestamps: false
 });
 
 module.exports = Area;

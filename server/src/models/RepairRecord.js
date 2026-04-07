@@ -11,7 +11,7 @@ const RepairRecord = sequelize.define('RepairRecord', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Machines',
+            model: 'machines',
             key: 'id'
         }
     },
@@ -62,7 +62,7 @@ const RepairRecord = sequelize.define('RepairRecord', {
         comment: 'Notas sobre la recepción, trabajos realizados o recomendaciones'
     }
 }, {
-    tableName: 'RepairRecords',
+    tableName: 'repair_records',
     timestamps: true,
 });
 

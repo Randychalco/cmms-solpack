@@ -11,7 +11,7 @@ const PreventiveExecution = sequelize.define('PreventiveExecution', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'PreventivePlans',
+            model: 'preventive_plans',
             key: 'id'
         }
     },
@@ -80,7 +80,7 @@ const PreventiveExecution = sequelize.define('PreventiveExecution', {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Users',
+            model: 'users',
             key: 'id'
         }
     },
@@ -109,7 +109,7 @@ const PreventiveExecution = sequelize.define('PreventiveExecution', {
         allowNull: true,
     }
 }, {
-    tableName: 'PreventiveExecutions',
+    tableName: 'preventive_executions',
     timestamps: true,
 });
 
