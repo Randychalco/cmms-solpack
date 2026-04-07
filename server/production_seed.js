@@ -19,9 +19,9 @@ async function seedProduction() {
             await User.create({
                 name: 'Admin Solpack',
                 email: adminEmail,
-                password: hashedPassword,
+                password_hash: hashedPassword,
                 role: 'admin',
-                status: 'activo'
+                status: 'active'
             });
             console.log('✅ Admin user created (admin@solpack.com / admin123).');
         } else {
