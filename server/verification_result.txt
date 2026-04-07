@@ -1,0 +1,40 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+=== VERIFICACI├ôN ├üREA-PLANTA ===
+
+1. PLANTAS EN EL SISTEMA:
+   ID: 2 - STRETCH
+   ID: 3 - RECICLAJE
+
+2. ├üREAS Y SUS PLANTAS ASIGNADAS:
+   "CINTAS" -> Planta ID 2 (STRETCH)
+   "EXTRUSION" -> Planta ID 2 (STRETCH)
+   "PREESTIRADO" -> Planta ID 2 (STRETCH)
+   "REBOBINADO" -> Planta ID 2 (STRETCH)
+   "SERV. AUX" -> Planta ID 2 (STRETCH)
+   "SERV. GEN" -> Planta ID 2 (STRETCH)
+   "LINEA BEIER" -> Planta ID 3 (RECICLAJE)
+   "PELETIZADOR" -> Planta ID 3 (RECICLAJE)
+   "PTAR" -> Planta ID 3 (RECICLAJE)
+   "SERV. AUX" -> Planta ID 3 (RECICLAJE)
+   "SERV. GEN" -> Planta ID 3 (RECICLAJE)
+
+Ô£ô Todas las ├íreas tienen planta asignada
+
+3. ├üREAS AGRUPADAS POR PLANTA:
+
+   STRETCH (ID: 2):
+      - CINTAS
+      - EXTRUSION
+      - PREESTIRADO
+      - REBOBINADO
+      - SERV. AUX
+      - SERV. GEN
+
+   RECICLAJE (ID: 3):
+      - LINEA BEIER
+      - PELETIZADOR
+      - PTAR
+      - SERV. AUX
+      - SERV. GEN
+
+=== FIN VERIFICACI├ôN ===

@@ -1,0 +1,22 @@
+[
+  {
+    "items": [
+      {
+        "id": 1,
+        "sku": "rptmasml000015",
+        "description": "rodamientoi 5004",
+        "quantity_requested": 1
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": 2,
+        "sku": "rptmagen000121",
+        "description": "cinta aislante",
+        "quantity_requested": 1
+      }
+    ]
+  }
+]

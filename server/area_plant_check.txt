@@ -1,0 +1,54 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+=== VERIFICACI├ôN ├üREA-PLANTA ===
+
+1. PLANTAS EN EL SISTEMA:
+   ID: 2 - STRETCH
+   ID: 3 - RECICLAJE
+
+2. ├üREAS Y SUS PLANTAS ASIGNADAS:
+   "CINTAS" -> Planta ID 2 (STRETCH)
+   "EXTRUSION" -> Planta ID 2 (STRETCH)
+   "LINEA BEIER" -> Planta ID 2 (STRETCH)
+   "PELETIZADOR" -> Planta ID 2 (STRETCH)
+   "PREESTIRADO" -> Planta ID 2 (STRETCH)
+   "PTAR" -> Planta ID 2 (STRETCH)
+   "REBOBINADO" -> Planta ID 2 (STRETCH)
+   "SERV. AUX" -> Planta ID 2 (STRETCH)
+   "SERV. GEN" -> Planta ID 2 (STRETCH)
+   "CINTAS" -> Planta ID 3 (RECICLAJE)
+   "EXTRUSION" -> Planta ID 3 (RECICLAJE)
+   "LINEA BEIER" -> Planta ID 3 (RECICLAJE)
+   "PELETIZADOR" -> Planta ID 3 (RECICLAJE)
+   "PREESTIRADO" -> Planta ID 3 (RECICLAJE)
+   "PTAR" -> Planta ID 3 (RECICLAJE)
+   "REBOBINADO" -> Planta ID 3 (RECICLAJE)
+   "SERV. AUX" -> Planta ID 3 (RECICLAJE)
+   "SERV. GEN" -> Planta ID 3 (RECICLAJE)
+
+Ô£ô Todas las ├íreas tienen planta asignada
+
+3. ├üREAS AGRUPADAS POR PLANTA:
+
+   STRETCH (ID: 2):
+      - CINTAS
+      - EXTRUSION
+      - LINEA BEIER
+      - PELETIZADOR
+      - PREESTIRADO
+      - PTAR
+      - REBOBINADO
+      - SERV. AUX
+      - SERV. GEN
+
+   RECICLAJE (ID: 3):
+      - CINTAS
+      - EXTRUSION
+      - LINEA BEIER
+      - PELETIZADOR
+      - PREESTIRADO
+      - PTAR
+      - REBOBINADO
+      - SERV. AUX
+      - SERV. GEN
+
+=== FIN VERIFICACI├ôN ===

@@ -1,0 +1,27 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+=== ELIMINACI├ôN DE ├ôRDENES PROBLEM├üTICAS ===
+
+1. ├ôRDENES A ELIMINAR:
+
+   ÔÜá´©Å Orden #1 no encontrada
+
+   ÔÜá´©Å Orden #10 no encontrada
+
+2. ELIMINANDO ├ôRDENES...
+
+   Ô£ô Orden #1 eliminada
+   Ô£ô Orden #10 eliminada
+
+3. VERIFICACI├ôN:
+
+   ÔÜá´©Å A├║n quedan 0 orden(es)
+
+4. NUEVO C├üLCULO DE HORAS-HOMBRE:
+
+   RCHALCO: 3.15 hrs
+   MJUAREZ: 2.07 hrs
+   RCABEZAS: 0.55 hrs
+   LBERROSPI: 0.50 hrs
+
+Ô£ô ELIMINACI├ôN COMPLETADA
+=== FIN ===

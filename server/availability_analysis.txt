@@ -1,0 +1,114 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+=== AN├üLISIS DE DISPONIBILIDAD POR ├üREA ===
+
+1. ├üREAS EN EL SISTEMA: 11
+
+   CINTAS (ID: 5, Plant: 2)
+   EXTRUSION (ID: 2, Plant: 2)
+   PREESTIRADO (ID: 4, Plant: 2)
+   REBOBINADO (ID: 3, Plant: 2)
+   SERV. AUX (ID: 6, Plant: 2)
+   SERV. GEN (ID: 12, Plant: 2)
+   LINEA BEIER (ID: 7, Plant: 3)
+   PELETIZADOR (ID: 8, Plant: 3)
+   PTAR (ID: 9, Plant: 3)
+   SERV. AUX (ID: 10, Plant: 3)
+   SERV. GEN (ID: 11, Plant: 3)
+
+2. ├ôRDENES QUE CUENTAN COMO DOWNTIME: 7
+
+   Criterios: order_class = EMERGENCIA o CORRECTIVO_PROGRAMADO
+
+   ├ürea: EXTRUSION
+      Clase: EMERGENCIA
+      Inicio: 2026-02-18 00:13:00
+      Fin: 2026-02-18 01:13:00
+
+   ├ürea: EXTRUSION
+      Clase: EMERGENCIA
+      Inicio: 2026-02-10 03:58:00
+      Fin: 2026-02-12 16:58:00
+
+   ├ürea: LINEA BEIER
+      Clase: CORRECTIVO_PROGRAMADO
+      Inicio: 2026-02-12 16:44:00
+      Fin: 2026-02-12 17:45:00
+
+   ├ürea: PELETIZADOR
+      Clase: EMERGENCIA
+      Inicio: 2026-02-12 21:48:00
+      Fin: 2026-02-12 21:59:00
+
+   ├ürea: PELETIZADOR
+      Clase: EMERGENCIA
+      Inicio: 2026-02-16 23:55:00
+      Fin: 2026-02-16 23:58:00
+
+3. C├üLCULO DE DOWNTIME POR ├üREA:
+
+   EXTRUSION:
+      Downtime: 62.00 hrs
+      ├ôrdenes: 2
+
+   LINEA BEIER:
+      Downtime: 1.02 hrs
+      ├ôrdenes: 1
+
+   PELETIZADOR:
+      Downtime: 1.28 hrs
+      ├ôrdenes: 4
+
+4. C├üLCULO DE DISPONIBILIDAD (Total anual: 8760 hrs):
+
+   CINTAS:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   EXTRUSION:
+      Downtime: 62.00 hrs
+      Disponibilidad: 99.29%
+
+   PREESTIRADO:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   REBOBINADO:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   SERV. AUX:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   SERV. GEN:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   LINEA BEIER:
+      Downtime: 1.02 hrs
+      Disponibilidad: 99.99%
+
+   PELETIZADOR:
+      Downtime: 1.28 hrs
+      Disponibilidad: 99.99%
+
+   PTAR:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   SERV. AUX:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+   SERV. GEN:
+      Downtime: 0.00 hrs
+      Disponibilidad: 100.00%
+
+5. RESUMEN:
+
+   Total ├íreas: 11
+   ├üreas al 100%: 8
+   ├üreas <99%: 0
+   Disponibilidad promedio: 99.93%
+
+=== FIN DEL AN├üLISIS ===

@@ -1,0 +1,60 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+=== AN├üLISIS DE HORAS-HOMBRE ===
+
+1. ├ôRDENES CON DATOS COMPLETOS: 10
+
+2. EJEMPLOS DE C├üLCULO:
+
+Orden #6:
+   Inicio: 2026-02-18 00:13:00
+   Fin: 2026-02-18 01:13:00
+   Total horas: 1.00 hrs
+   T├®cnicos: RCHALCO
+   Horas por t├®cnico: 1.00 hrs
+
+Orden #4:
+   Inicio: 2026-02-16 23:55:00
+   Fin: 2026-02-16 23:58:00
+   Total horas: 0.05 hrs
+   T├®cnicos: RCHALCO, MJUAREZ, RCABEZAS
+   Horas por t├®cnico: 0.02 hrs
+
+Orden #2:
+   Inicio: 2026-02-16 23:55:00
+   Fin: 2026-02-16 23:58:00
+   Total horas: 0.05 hrs
+   T├®cnicos: RCHALCO, MJUAREZ, RCABEZAS
+   Horas por t├®cnico: 0.02 hrs
+
+Orden #1:
+   Inicio: 2026-02-16 23:55:00
+   Fin: 2026-02-16 00:58:00
+   Total horas: -22.95 hrs
+   T├®cnicos: RCHALCO, MJUAREZ, RCABEZAS
+   Horas por t├®cnico: -7.65 hrs
+
+Orden #3:
+   Inicio: 2026-02-16 23:55:00
+   Fin: 2026-02-16 23:58:00
+   Total horas: 0.05 hrs
+   T├®cnicos: RCHALCO, MJUAREZ, RCABEZAS
+   Horas por t├®cnico: 0.02 hrs
+
+3. TOTAL HORAS POR T├ëCNICO:
+
+   LBERROSPI: 0.50 hrs
+   RCHALCO: -4.50 hrs
+   MJUAREZ: -5.58 hrs
+   RCABEZAS: -7.10 hrs
+   ILOBATON: -11.49 hrs
+   JRAMOS: -11.49 hrs
+
+4. VERIFICACI├ôN DE POSIBLES PROBLEMAS:
+
+   ÔÜá´©Å 2 ├│rden(es) con horas negativas (fin antes del inicio)
+      - Orden #1: 2026-02-16 23:55:00 ÔåÆ 2026-02-16 00:58:00
+      - Orden #10: 2026-02-11 23:58:00 ÔåÆ 2026-02-11 00:59:00
+   Ô£ô No hay ├│rdenes con duraci├│n excesiva
+   Ô£ô Todos los t├®cnicos tienen nombres v├ílidos
+
+=== FIN DEL AN├üLISIS ===

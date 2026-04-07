@@ -1,0 +1,286 @@
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\components\SignaturePad.jsx
+  Line 1: 'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 8: 'clear' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\context\AuthContext.jsx
+  Line 53: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\Assets.jsx
+  Line 23: Error: Cannot access variable before it is declared
+
+`fetchAssets` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  21 |
+  22 |     useEffect(() => {
+> 23 |         fetchAssets();
+     |         ^^^^^^^^^^^ `fetchAssets` accessed before it is declared
+  24 |     }, [filterPlant]);
+  25 |
+  26 |     const fetchAssets = async () => {
+
+  24 |     }, [filterPlant]);
+  25 |
+> 26 |     const fetchAssets = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 27 |         setLoading(true);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |         try {
+     ÔÇª
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 38 |         }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 39 |     };
+     | ^^^^^^^ `fetchAssets` is declared here
+  40 |
+  41 |     const handleSubmit = async (e) => {
+  42 |         e.preventDefault();
+  Line 24: React Hook useEffect has a missing dependency: 'fetchAssets'. Either include it or remove the dependency array.
+  Line 48: 'error' is defined but never used.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\ChecklistExecutionsList.jsx
+  Line 5: 'jsPDF' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\Checklists.jsx
+  Line 50: Error: Cannot access variable before it is declared
+
+`fetchTemplates` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  48 |
+  49 |     useEffect(() => {
+> 50 |         fetchTemplates();
+     |         ^^^^^^^^^^^^^^ `fetchTemplates` accessed before it is declared
+  51 |     }, []);
+  52 |
+  53 |     const fetchTemplates = async () => {
+
+  51 |     }, []);
+  52 |
+> 53 |     const fetchTemplates = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 54 |         try {
+     | ^^^^^^^^^^^^^
+> 55 |             const { data } = await api.get('/checklists/templates');
+     | ^^^^^^^^^^^^^
+> 56 |             setTemplates(data);
+     | ^^^^^^^^^^^^^
+> 57 |         } catch (error) {
+     | ^^^^^^^^^^^^^
+> 58 |             console.error('Error fetching templates:', error);
+     | ^^^^^^^^^^^^^
+> 59 |         }
+     | ^^^^^^^^^^^^^
+> 60 |     };
+     | ^^^^^^^ `fetchTemplates` is declared here
+  61 |
+  62 |
+  63 |
+  Line 126: 'cat' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 147: 'setNewTemplate' is not defined.
+  Line 168: 'setNewTemplate' is not defined.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\Dashboard.jsx
+  Line 8: 'Icon' is defined but never used.
+  Line 91: Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  89 |
+  90 |         // Reset area when plant changes
+> 91 |         setFilters(prev => ({ ...prev, areaId: '' }));
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  92 |     }, [filters.plantId]);
+  93 |
+  94 |     useEffect(() => {
+  Line 190: 'inProgressOTs' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\Inventory.jsx
+  Line 24: Error: Cannot access variable before it is declared
+
+`fetchInventory` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  22 |
+  23 |     useEffect(() => {
+> 24 |         fetchInventory();
+     |         ^^^^^^^^^^^^^^ `fetchInventory` accessed before it is declared
+  25 |     }, []);
+  26 |
+  27 |     const fetchInventory = async () => {
+
+  25 |     }, []);
+  26 |
+> 27 |     const fetchInventory = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 28 |         try {
+     | ^^^^^^^^^^^^^
+> 29 |             const { data } = await api.get('/inventory');
+     | ^^^^^^^^^^^^^
+> 30 |             setItems(data);
+     | ^^^^^^^^^^^^^
+> 31 |         } catch (error) {
+     | ^^^^^^^^^^^^^
+> 32 |             console.error('Error fetching inventory:', error);
+     | ^^^^^^^^^^^^^
+> 33 |         }
+     | ^^^^^^^^^^^^^
+> 34 |     };
+     | ^^^^^^^ `fetchInventory` is declared here
+  35 |
+  36 |     const handleSubmit = async (e) => {
+  37 |         e.preventDefault();
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\Register.jsx
+  Line 18: 'navigate' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\WorkOrderChecklist.jsx
+  Line 23: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.
+  Line 137: 'originalStyle' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 252: 'scaledPdfWidth' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\WorkOrderCreate.jsx
+  Line 40: 'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 47: 'searchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 47: 'setSearchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 48: 'showSuggestions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 48: 'setShowSuggestions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 89: Error: Cannot access variable before it is declared
+
+`fetchPlants` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  87 |     // Fetch initial data
+  88 |     useEffect(() => {
+> 89 |         fetchPlants();
+     |         ^^^^^^^^^^^ `fetchPlants` accessed before it is declared
+  90 |         fetchPendingRequests();
+  91 |     }, []);
+  92 |
+
+   91 |     }, []);
+   92 |
+>  93 |     const fetchPlants = async () => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  94 |         try {
+      | ^^^^^^^^^^^^^
+>  95 |             const { data } = await api.get('/master/plants');
+      | ^^^^^^^^^^^^^
+>  96 |             setPlants(data);
+      | ^^^^^^^^^^^^^
+>  97 |         } catch (error) {
+      | ^^^^^^^^^^^^^
+>  98 |             console.error('Error fetching plants:', error);
+      | ^^^^^^^^^^^^^
+>  99 |         }
+      | ^^^^^^^^^^^^^
+> 100 |     };
+      | ^^^^^^^ `fetchPlants` is declared here
+  101 |
+  102 |
+  103 |
+  Line 90: Error: Cannot access variable before it is declared
+
+`fetchPendingRequests` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  88 |     useEffect(() => {
+  89 |         fetchPlants();
+> 90 |         fetchPendingRequests();
+     |         ^^^^^^^^^^^^^^^^^^^^ `fetchPendingRequests` accessed before it is declared
+  91 |     }, []);
+  92 |
+  93 |     const fetchPlants = async () => {
+
+  102 |
+  103 |
+> 104 |     const fetchPendingRequests = async () => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 105 |         try {
+      | ^^^^^^^^^^^^^
+> 106 |             const { data } = await api.get('/material-requests?status=En Proceso');
+      | ^^^^^^^^^^^^^
+> 107 |             setPendingRequests(data);
+      | ^^^^^^^^^^^^^
+> 108 |         } catch (error) {
+      | ^^^^^^^^^^^^^
+> 109 |             console.error('Error fetching material requests:', error);
+      | ^^^^^^^^^^^^^
+> 110 |         }
+      | ^^^^^^^^^^^^^
+> 111 |     };
+      | ^^^^^^^ `fetchPendingRequests` is declared here
+  112 |
+  113 |     const fetchAreas = async (plantId) => {
+  114 |         try {
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\WorkOrderDetails.jsx
+  Line 15: 'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 24: React Hook useEffect has a missing dependency: 'fetchWO'. Either include it or remove the dependency array.
+  Line 57: 'w' is defined but never used.
+  Line 277: 'error' is defined but never used.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\WorkOrderEdit.jsx
+  Line 41: 'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 55: 'searchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 55: 'setSearchTerm' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 56: 'showSuggestions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 56: 'setShowSuggestions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u.
+  Line 90: Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  88 |
+  89 |     useEffect(() => {
+> 90 |         loadData();
+     |         ^^^^^^^^ `loadData` accessed before it is declared
+  91 |     }, [id]);
+  92 |
+  93 |     const loadData = async () => {
+
+   91 |     }, [id]);
+   92 |
+>  93 |     const loadData = async () => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  94 |         try {
+      | ^^^^^^^^^^^^^
+>  95 |             setLoading(true);
+      ÔÇª
+      | ^^^^^^^^^^^^^
+> 167 |         }
+      | ^^^^^^^^^^^^^
+> 168 |     };
+      | ^^^^^^^ `loadData` is declared here
+  169 |
+  170 |     const fetchAreas = async (plantId) => {
+  171 |         try {
+  Line 91: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.
+
+C:\Users\randy\GESTI├ôN DE MANTENIMIENTO - SOLPACK\client\src\pages\WorkOrders.jsx
+  Line 18: Error: Cannot access variable before it is declared
+
+`fetchWorkOrders` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  16 |
+  17 |     useEffect(() => {
+> 18 |         fetchWorkOrders();
+     |         ^^^^^^^^^^^^^^^ `fetchWorkOrders` accessed before it is declared
+  19 |     }, []);
+  20 |
+  21 |     const fetchWorkOrders = async () => {
+
+  19 |     }, []);
+  20 |
+> 21 |     const fetchWorkOrders = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 22 |         try {
+     | ^^^^^^^^^^^^^
+> 23 |             const { data } = await api.get('/work-orders');
+     ÔÇª
+     | ^^^^^^^^^^^^^
+> 30 |         }
+     | ^^^^^^^^^^^^^
+> 31 |     };
+     | ^^^^^^^ `fetchWorkOrders` is declared here
+  32 |
+  33 |     useEffect(() => {
+  34 |         if (filter === 'ALL') {

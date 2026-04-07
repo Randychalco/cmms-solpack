@@ -1,0 +1,14 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+Equipment Conditions and Order Classes:
+[
+  {
+    "equipment_condition": "FUNCIONAMIENTO",
+    "order_class": "MANTENIMIENTO_PREVENTIVO",
+    "count": "1"
+  },
+  {
+    "equipment_condition": "FUNCIONAMIENTO",
+    "order_class": "TAREA",
+    "count": "1"
+  }
+]

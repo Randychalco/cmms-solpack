@@ -1,0 +1,282 @@
+[
+  {
+    "id": 2,
+    "name": "SML 1"
+  },
+  {
+    "id": 3,
+    "name": "SML 2"
+  },
+  {
+    "id": 4,
+    "name": "R 01"
+  },
+  {
+    "id": 5,
+    "name": "R 02"
+  },
+  {
+    "id": 6,
+    "name": "R 03"
+  },
+  {
+    "id": 7,
+    "name": "R 04"
+  },
+  {
+    "id": 8,
+    "name": "R 05"
+  },
+  {
+    "id": 9,
+    "name": "R 06"
+  },
+  {
+    "id": 10,
+    "name": "P 01"
+  },
+  {
+    "id": 11,
+    "name": "P 02"
+  },
+  {
+    "id": 12,
+    "name": "P 03"
+  },
+  {
+    "id": 13,
+    "name": "P 04"
+  },
+  {
+    "id": 14,
+    "name": "P 05"
+  },
+  {
+    "id": 15,
+    "name": "SIAT 1"
+  },
+  {
+    "id": 16,
+    "name": "SIAT 2"
+  },
+  {
+    "id": 17,
+    "name": "SIAT 3"
+  },
+  {
+    "id": 18,
+    "name": "WEBTEC 1"
+  },
+  {
+    "id": 19,
+    "name": "WEBTEC 2"
+  },
+  {
+    "id": 20,
+    "name": "CORTADORA DE TUCOS"
+  },
+  {
+    "id": 27,
+    "name": "FAJA TRANSPORTADORA 1"
+  },
+  {
+    "id": 28,
+    "name": "FAJA TRANSPORTADORA 2"
+  },
+  {
+    "id": 29,
+    "name": "FAJA TRANSPORTADORA 3"
+  },
+  {
+    "id": 30,
+    "name": "FAJA TRANSPORTADORA 4"
+  },
+  {
+    "id": 31,
+    "name": "HUSILLO TRANSPORTADOR 1"
+  },
+  {
+    "id": 32,
+    "name": "HUSILLO TRANSPORTADOR 2"
+  },
+  {
+    "id": 33,
+    "name": "HUSILLO TRANSPORTADOR 3"
+  },
+  {
+    "id": 34,
+    "name": "HUSILLO TRANSPORTADOR 4"
+  },
+  {
+    "id": 35,
+    "name": "HUSILLO TRANSPORTADOR 5"
+  },
+  {
+    "id": 36,
+    "name": "HUSILLO TRANSPORTADOR 6"
+  },
+  {
+    "id": 37,
+    "name": "TRITURADOR WEIMA"
+  },
+  {
+    "id": 38,
+    "name": "MOLINO LINDNER"
+  },
+  {
+    "id": 39,
+    "name": "TINA DE LAVADO 1"
+  },
+  {
+    "id": 40,
+    "name": "TINA DE LAVADO 2"
+  },
+  {
+    "id": 41,
+    "name": "LAVADORA DE FRICCION 1"
+  },
+  {
+    "id": 42,
+    "name": "LAVADORA DE FRICCION 2"
+  },
+  {
+    "id": 43,
+    "name": "EXPRIMIDOR 1"
+  },
+  {
+    "id": 44,
+    "name": "EXPRIMIDOR 2"
+  },
+  {
+    "id": 45,
+    "name": "SOPLADOR 1"
+  },
+  {
+    "id": 46,
+    "name": "SOPLADOR 2"
+  },
+  {
+    "id": 47,
+    "name": "SOPLADOR 3"
+  },
+  {
+    "id": 48,
+    "name": "SOPLADOR 4"
+  },
+  {
+    "id": 49,
+    "name": "SILO 1"
+  },
+  {
+    "id": 50,
+    "name": "SILO 2"
+  },
+  {
+    "id": 51,
+    "name": "EREMA 1"
+  },
+  {
+    "id": 52,
+    "name": "EREMA 2"
+  },
+  {
+    "id": 53,
+    "name": "DOSIFICACION"
+  },
+  {
+    "id": 54,
+    "name": "TANQUE DE AIREACION"
+  },
+  {
+    "id": 55,
+    "name": "SEDIMENTADOR"
+  },
+  {
+    "id": 56,
+    "name": "TANQUE DE FILTRACION"
+  },
+  {
+    "id": 57,
+    "name": "FILTRO PRENSA"
+  },
+  {
+    "id": 58,
+    "name": "TANQUE DE ALMACENAMIENTO"
+  },
+  {
+    "id": 64,
+    "name": "CAJA DE RESISTENCIA 1"
+  },
+  {
+    "id": 65,
+    "name": "CAJA DE RESISTENCIA 2"
+  },
+  {
+    "id": 67,
+    "name": "HIDROLAVADORA"
+  },
+  {
+    "id": 68,
+    "name": "SIAT 2 "
+  },
+  {
+    "id": 69,
+    "name": "CORTADORA EXTERIOR"
+  },
+  {
+    "id": 70,
+    "name": "CHILLER 1"
+  },
+  {
+    "id": 71,
+    "name": "CHILLER 2"
+  },
+  {
+    "id": 72,
+    "name": "CHILLER 3"
+  },
+  {
+    "id": 73,
+    "name": "COMPRESOR 4509B"
+  },
+  {
+    "id": 74,
+    "name": "COMPRESOR 3709B"
+  },
+  {
+    "id": 75,
+    "name": " LAVADORA DE FRICCION 1"
+  },
+  {
+    "id": 76,
+    "name": " LAVADORA DE FRICCION 2"
+  },
+  {
+    "id": 77,
+    "name": "TANQUE DE FILTRACION "
+  },
+  {
+    "id": 78,
+    "name": "COMPRESOR LS -100"
+  },
+  {
+    "id": 79,
+    "name": "CHILLER 4"
+  },
+  {
+    "id": 80,
+    "name": "SISTEMA CONTRAINCENDIOS"
+  },
+  {
+    "id": 81,
+    "name": "INFRAESTRUCTURA"
+  },
+  {
+    "id": 82,
+    "name": "INFRAESTRUCTURA"
+  },
+  {
+    "id": 83,
+    "name": "SISTEMA CONTRAINCENDIOS"
+  }
+]

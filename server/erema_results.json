@@ -1,0 +1,30 @@
+{
+  "machines": [
+    {
+      "id": 51,
+      "name": "EREMA 1"
+    },
+    {
+      "id": 52,
+      "name": "EREMA 2"
+    }
+  ],
+  "templates": [
+    {
+      "id": 62,
+      "name": "RUTINA DE INSPECCION GENERAL - Erema 1"
+    },
+    {
+      "id": 63,
+      "name": "RUTINA DE INSPECCION GENERAL - Erema 2"
+    },
+    {
+      "id": 51,
+      "name": "RUTINA DE INSPECCION GENERAL - Erema 2"
+    },
+    {
+      "id": 50,
+      "name": "RUTINA DE INSPECCION GENERAL - Erema 1"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+[dotenv@17.2.4] injecting env (9) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+Fetching a WorkOrder...
+WO ID: 49, Status: CERRADA
+Fetching an unassigned MaterialRequest...
+Connected to the PostgreSQL database
+MR ID: 58c9596a-b6b6-4401-a2c4-3991bdd868aa
+Calling updateWorkOrder...
+Error updating material requests for WO: error: inserción o actualización en la tabla «material_requests» viola la llave foránea «material_requests_wo_id_fkey»
+    at C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async updateWorkOrder (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\src\controllers\workOrderController.js:335:25)
+    at async run (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\test_update.js:32:9) {
+  length: 314,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'La llave (wo_id)=(49) no está presente en la tabla «work_orders».',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'material_requests',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'material_requests_wo_id_fkey',
+  file: 'ri_triggers.c',
+  line: '2783',
+  routine: 'ri_ReportViolation'
+}
+EagerLoadingError [SequelizeEagerLoadingError]: Plant is not associated to WorkOrder!
+    at WorkOrder._getIncludedAssociation (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:565:13)
+    at WorkOrder._validateIncludedElement (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at WorkOrder._validateIncludedElements (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:417:39)
+    at WorkOrder.findAll (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async WorkOrder.findOne (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:1240:12)
+    at async WorkOrder.findByPk (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\node_modules\sequelize\lib\model.js:1221:12)
+    at async updateWorkOrder (C:\Users\randy\GESTIÓN DE MANTENIMIENTO - SOLPACK\server\src\controllers\workOrderController.js:349:34)
+Error 500: { message: 'Server error' }
+Finished. Checking DB for MR status...
+Connected to the PostgreSQL database
+New MR state: { status: 'En Proceso', wo_id: null }

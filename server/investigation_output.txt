@@ -1,0 +1,68 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+=== INVESTIGACI├ôN DE VALORES EN ├ôRDENES DE TRABAJO ===
+
+1. CONDICIONES DE EQUIPO (equipment_condition):
+   Ô£ô "FUNCIONAMIENTO" - 2 registros
+
+2. CLASES DE ORDEN (order_class):
+   Ô£ô "EMERGENCIA" - 6 registros
+   Ô£ô "CORRECTIVO_PROGRAMADO" - 3 registros
+   Ô£ô "MANTENIMIENTO_PREVENTIVO" - 1 registros
+   Ô£ô "TAREA" - 1 registros
+
+3. MUESTRA DE ├ôRDENES DE TRABAJO (primeras 10 con fechas):
+
+   [1] OT #6
+      ├ürea: EXTRUSION
+      Condici├│n: "null"
+      Clase: "EMERGENCIA"
+      Duraci├│n: 1.00 horas
+
+   [2] OT #10
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "CORRECTIVO_PROGRAMADO"
+      Duraci├│n: -22.98 horas
+
+   [3] OT #8
+      ├ürea: PELETIZADOR
+      Condici├│n: "FUNCIONAMIENTO"
+      Clase: "TAREA"
+      Duraci├│n: 1.00 horas
+
+   [4] OT #4
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "EMERGENCIA"
+      Duraci├│n: 144.05 horas
+
+   [5] OT #2
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "EMERGENCIA"
+      Duraci├│n: 144.05 horas
+
+   [6] OT #1
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "EMERGENCIA"
+      Duraci├│n: 144.05 horas
+
+   [7] OT #11
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "CORRECTIVO_PROGRAMADO"
+      Duraci├│n: -23.00 horas
+
+   [8] OT #3
+      ├ürea: PELETIZADOR
+      Condici├│n: "null"
+      Clase: "EMERGENCIA"
+      Duraci├│n: 144.05 horas
+
+4. COMBINACIONES (Condici├│n + Clase):
+   "FUNCIONAMIENTO" + "MANTENIMIENTO_PREVENTIVO" = 1 OTs
+   "FUNCIONAMIENTO" + "TAREA" = 1 OTs
+
+=== FIN DE INVESTIGACI├ôN ===
+

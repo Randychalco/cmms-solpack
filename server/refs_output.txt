@@ -1,0 +1,22 @@
+﻿[dotenv@17.2.4] injecting env (9) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+Detecting possible references in Orden de Trabajo...
+Column: _RowNumber | Example: 2
+Column: IDORDEN | Example: 8709b909
+Column: PLANTA | Example: RECICLAJE
+Column: AREA | Example: LINEA BEIER
+Column: EQUIPO | Example: EXPRIMIDOR 1
+Column: SUB-EQUIPO | Example: SISTEMA DE TRANSMISION
+Column: CONDICI├ôN DE EQUIPO | Example: PROGRAMADO
+Column: CLASE DE ORDEN | Example: CORRECTIVO PROGRAMADO
+Column: FALLA | Example: BAJO RENDIMIENTO
+Column: CAUSA | Example: DESGASTE DE PIEZAS
+Column: ACCI├ôN REALIZADA | Example: Reparaci├│n y armado de squizer 1
+Column: GRUPO PLANIFICACI├ôN | Example: MECANICO
+Column: HORA INICIO | Example: 11:00:00
+Column: HORA TERMINO | Example: 16:30:00
+Column: FECHA INICIO | Example: 10/20/2025
+Column: FECHA DE TERMINO | Example: 10/20/2025
+Column: TECNICO RESPONSABLE | Example: MJUAREZ , RCABEZAS , JQUISPE
+Column: MATERIALES | Example: Herramientas  manuales
+Column: FIRMA TECNICO | Example: ORDEN DE TRABAJO_Images/8709b909.FIRMA TECNICO.215607.png
+Column: PDF | Example: /GESTION DE MANTENIMIENTO/PDFS/8709b909.PDF
