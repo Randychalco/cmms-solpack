@@ -85,6 +85,8 @@ const syncDatabase = async () => {
 
         PreventiveExecution.belongsTo(Plant, { foreignKey: 'plant_id' });
         PreventiveExecution.belongsTo(Area, { foreignKey: 'area_id' });
+        PreventiveExecution.belongsTo(Machine, { foreignKey: 'machine_id' });
+        PreventiveExecution.belongsTo(SubMachine, { foreignKey: 'sub_machine_id' });
 
         // Sync models with database
         await sequelize.sync({ alter: true });

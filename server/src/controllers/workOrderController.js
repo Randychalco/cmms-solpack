@@ -1,6 +1,44 @@
 const { WorkOrder, Plant, Area, Machine, SubMachine, User, Inventory } = require('../models');
 const db = require('../config/db');
 
+// Helper to handle inventory deduction/restoration for multiple formats
+const processMaterials = async (materialsData, action = 'deduct') => {
+    if (!materialsData) return;
+    try {
+        const materials = typeof materialsData === 'string' ? JSON.parse(materialsData) : materialsData;
+        if (!Array.isArray(materials)) return;
+        
+        for (const mat of materials) {
+            const qty = parseFloat(mat.used_quantity || mat.quantity_requested || mat.quantity || 0);
+            if (qty <= 0 || isNaN(qty)) continue;
+
+            let item = null;
+            // Material requests items usually have .id as inventory_id, 
+            // direct materials have .inventory_id
+            const invId = mat.inventory_id || mat.id;
+            
+            if (invId && !isNaN(parseInt(invId))) {
+                item = await Inventory.findByPk(invId);
+            }
+            if (!item && mat.sku) {
+                item = await Inventory.findOne({ where: { code: mat.sku } });
+            }
+
+            if (item) {
+                if (action === 'deduct') {
+                    item.current_stock = Math.max(0, item.current_stock - qty);
+                } else if (action === 'restore') {
+                    item.current_stock = item.current_stock + qty;
+                }
+                await item.save();
+            }
+        }
+    } catch (err) {
+        console.error(`Error ${action}ing inventory for materials:`, err);
+    }
+};
+
+
 // @desc    Get all work orders with hierarchy
 // @route   GET /api/work-orders
 // @access  Private
@@ -64,6 +102,8 @@ const createWorkOrder = async (req, res) => {
             action_taken,
             planning_group,
             technician_id,
+            leader_technician_name,
+            supervisor_name,
             start_date,
             start_time,
             end_date,
@@ -86,11 +126,18 @@ const createWorkOrder = async (req, res) => {
         if (lastOrder && lastOrder.ticket_number) {
             const parts = lastOrder.ticket_number.split('-');
             if (parts.length === 3 && parts[1] === String(year)) {
-                sequence = parseInt(parts[2], 10) + 1;
+                const lastSeq = parseInt(parts[2], 10);
+                if (!isNaN(lastSeq)) {
+                    sequence = lastSeq + 1;
+                }
             }
         }
 
         const ticket_number = `OT-${year}-${String(sequence).padStart(4, '0')}`;
+
+        console.log('--- CREATING OT ---');
+        console.log('Tech Sig Length:', req.body.technician_signature ? req.body.technician_signature.length : 'NULL');
+        console.log('Op Sig Length:', req.body.operator_signature ? req.body.operator_signature.length : 'NULL');
 
         // Create work order
         const workOrder = await WorkOrder.create({
@@ -105,8 +152,10 @@ const createWorkOrder = async (req, res) => {
             failure_cause: failure_cause || null,
             action_taken: action_taken || null,
             planning_group: planning_group || null,
-            requester_id: req.user.id,
+            requester_id: req.user ? req.user.id : null,
             technician_id: technician_id || null,
+            leader_technician_name: leader_technician_name || null,
+            supervisor_name: supervisor_name || null,
             start_date: start_date || null,
             start_time: start_time || null,
             end_date: end_date || null,
@@ -119,90 +168,34 @@ const createWorkOrder = async (req, res) => {
             operator_signature: req.body.operator_signature || null,
         });
 
-        // Deduct Stock from Inventory
-        if (materials_used) {
-            try {
-                let materials = [];
-                if (typeof materials_used === 'string') {
-                    materials = JSON.parse(materials_used);
-                } else {
-                    materials = materials_used;
-                }
+        // 1. Linked Material Requests
+        if (material_request_ids && Array.isArray(material_request_ids) && material_request_ids.length > 0) {
+            for (const reqId of material_request_ids) {
+                try {
+                    // Basic UUID validation check (if it's a string and has dashes)
+                    if (typeof reqId !== 'string' || !reqId.includes('-')) continue;
 
-                for (const mat of materials) {
-                    if (mat.quantity) {
-                        let item = null;
-                        if (mat.inventory_id) {
-                            item = await Inventory.findByPk(mat.inventory_id);
+                    const reqRow = await db.query('SELECT * FROM material_requests WHERE id = $1', [reqId]);
+                    if (reqRow.rows.length > 0) {
+                        let finalStatus = 'En Proceso';
+                        if (status === 'CERRADA') {
+                            finalStatus = 'Entregado';
+                            await processMaterials(reqRow.rows[0].items, 'deduct');
                         }
-                        if (!item && mat.sku) {
-                            item = await Inventory.findOne({ where: { code: mat.sku } });
-                        }
-                        
-                        if (item) {
-                            const quantityUsed = parseFloat(mat.quantity);
-                            if (!isNaN(quantityUsed)) {
-                                item.current_stock = Math.max(0, item.current_stock - quantityUsed);
-                                await item.save();
-                            }
-                        }
+                        await db.query(
+                            'UPDATE material_requests SET wo_id = $1, status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+                            [workOrder.id, finalStatus, reqId]
+                        );
                     }
+                } catch (reqErr) {
+                    console.error(`Error linking material request ${reqId}:`, reqErr);
                 }
-            } catch (err) {
-                console.error('Error deducting stock from direct materials:', err);
             }
         }
 
-        // Handle Material Requests Linked to this WO
-        if (material_request_ids && material_request_ids.length > 0) {
-            try {
-                // Fetch the requests
-                const requestsResult = await db.query(
-                    'SELECT * FROM material_requests WHERE id = ANY($1::uuid[])',
-                    [material_request_ids]
-                );
-
-                for (const reqRow of requestsResult.rows) {
-                    const items = typeof reqRow.items === 'string' ? JSON.parse(reqRow.items) : reqRow.items;
-                    let finalStatus = 'Asignado';
-
-                    if (workOrder.status === 'CERRADA') {
-                        finalStatus = 'Completado';
-                        // Deduct inventory
-                        for (const reqItem of items) {
-                            if (reqItem.quantity_requested) {
-                                let invItem = null;
-                                if (reqItem.id) {
-                                    invItem = await Inventory.findByPk(reqItem.id);
-                                }
-                                if (!invItem && reqItem.sku) {
-                                    invItem = await Inventory.findOne({ where: { code: reqItem.sku } });
-                                }
-
-                                if (invItem) {
-                                    const q = parseFloat(reqItem.quantity_requested);
-                                    if (!isNaN(q)) {
-                                        invItem.current_stock = Math.max(0, invItem.current_stock - q);
-                                        await invItem.save();
-                                    }
-                                } else {
-                                    console.warn(`Item not found during Work Order material deduction: ID ${reqItem.id}, SKU: ${reqItem.sku}`);
-                                }
-                            }
-                        }
-                    }
-
-                    // Mark request as Asignado/Completado and link WO
-                    await db.query(
-                        `UPDATE material_requests 
-                         SET status = $3, wo_id = $1, updated_at = CURRENT_TIMESTAMP 
-                         WHERE id = $2`,
-                        [workOrder.id, reqRow.id, finalStatus]
-                    );
-                }
-            } catch (err) {
-                console.error('Error processing material requests for WO:', err);
-            }
+        // 2. Direct Materials (materials_used)
+        if (materials_used && status === 'CERRADA') {
+            await processMaterials(materials_used, 'deduct');
         }
 
         // Fetch with relations
@@ -233,7 +226,10 @@ const updateWorkOrder = async (req, res) => {
             return res.status(404).json({ message: 'Work order not found' });
         }
 
-        // Update fields
+        const prevStatus = workOrder.status;
+        const newStatus = req.body.status || prevStatus;
+
+        // Update basic fields
         await workOrder.update(req.body);
 
         // Handle Material Requests Linked or Unlinked to this WO
@@ -243,106 +239,64 @@ const updateWorkOrder = async (req, res) => {
             try {
                 const requestedIds = Array.isArray(material_request_ids) ? material_request_ids : [];
 
-                // 1. Find currently linked requests for this WO
                 const currentLinkedRes = await db.query(
-                    'SELECT id FROM material_requests WHERE wo_id = $1',
+                    'SELECT * FROM material_requests WHERE wo_id = $1',
                     [workOrder.id]
                 );
-                const currentLinkedIds = currentLinkedRes.rows.map(r => r.id);
+                const currentLinkedRequests = currentLinkedRes.rows;
+                const currentLinkedIds = currentLinkedRequests.map(r => r.id);
 
-                // 2. Unlink requests that were unselected (Restore inventory)
+                // 1. Unlink requests that were unselected (Restore inventory)
                 const idsToUnlink = currentLinkedIds.filter(id => !requestedIds.includes(id));
                 if (idsToUnlink.length > 0) {
-                    // Restore inventory
-                    const requestsToUnlink = await db.query(
-                        'SELECT * FROM material_requests WHERE id = ANY($1::uuid[])',
-                        [idsToUnlink]
-                    );
-
-                    for (const reqRow of requestsToUnlink.rows) {
-                        // Only restore if it was previously completed and discounted
-                        if (reqRow.status === 'Completado') {
-                            const items = typeof reqRow.items === 'string' ? JSON.parse(reqRow.items) : reqRow.items;
-                            for (const reqItem of items) {
-                                if (reqItem.quantity_requested) {
-                                    let invItem = null;
-                                    if (reqItem.id) {
-                                        invItem = await Inventory.findByPk(reqItem.id);
-                                    }
-                                    if (!invItem && reqItem.sku) {
-                                        invItem = await Inventory.findOne({ where: { code: reqItem.sku } });
-                                    }
-                                    
-                                    if (invItem) {
-                                        const q = parseFloat(reqItem.quantity_requested);
-                                        if (!isNaN(q)) {
-                                            // Restore stock
-                                            invItem.current_stock = invItem.current_stock + q;
-                                            await invItem.save();
-                                        }
-                                    }
-                                }
-                            }
+                    for (const reqId of idsToUnlink) {
+                        const reqRow = currentLinkedRequests.find(r => r.id === reqId);
+                        if (reqRow && reqRow.status === 'Entregado') {
+                            await processMaterials(reqRow.items, 'restore');
                         }
+                        await db.query(
+                            `UPDATE material_requests SET wo_id = NULL, status = 'En Proceso', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                            [reqId]
+                        );
                     }
-
-                    await db.query(
-                        `UPDATE material_requests SET wo_id = NULL, status = 'En Proceso' WHERE id = ANY($1::uuid[])`,
-                        [idsToUnlink]
-                    );
                 }
 
-                // 3. Process newly selected requests
-                const idsToAdd = requestedIds.filter(id => !currentLinkedIds.includes(id));
+                // 2. Process newly selected requests OR existing ones if status changed to CERRADA
+                for (const reqId of requestedIds) {
+                    const isNew = !currentLinkedIds.includes(reqId);
+                    const reqRowRes = await db.query('SELECT * FROM material_requests WHERE id = $1', [reqId]);
+                    if (reqRowRes.rows.length === 0) continue;
+                    const reqRow = reqRowRes.rows[0];
 
-                if (idsToAdd.length > 0) {
-                    const requestsToAdd = await db.query(
-                        'SELECT * FROM material_requests WHERE id = ANY($1::uuid[]) AND status != \'Completado\'',
-                        [idsToAdd]
-                    );
-
-                    for (const reqRow of requestsToAdd.rows) {
-                        const items = typeof reqRow.items === 'string' ? JSON.parse(reqRow.items) : reqRow.items;
-                        let finalStatus = 'Asignado';
-
-                        if (workOrder.status === 'CERRADA') {
-                            finalStatus = 'Completado';
-                            // Deduct inventory
-                            for (const reqItem of items) {
-                                if (reqItem.quantity_requested) {
-                                    let invItem = null;
-                                    if (reqItem.id) {
-                                        invItem = await Inventory.findByPk(reqItem.id);
-                                    }
-                                    if (!invItem && reqItem.sku) {
-                                        invItem = await Inventory.findOne({ where: { code: reqItem.sku } });
-                                    }
-                                    
-                                    if (invItem) {
-                                        const q = parseFloat(reqItem.quantity_requested);
-                                        if (!isNaN(q)) {
-                                            invItem.current_stock = Math.max(0, invItem.current_stock - q);
-                                            await invItem.save();
-                                        }
-                                    } else {
-                                        console.warn(`Item not found during Work Order update material deduction: ID ${reqItem.id}, SKU: ${reqItem.sku}`);
-                                    }
-                                }
-                            }
+                    if (isNew) {
+                        let finalStatus = 'En Proceso';
+                        if (newStatus === 'CERRADA') {
+                            finalStatus = 'Entregado';
+                            await processMaterials(reqRow.items, 'deduct');
                         }
-
-                        // Mark request as Asignado/Completado and link WO
                         await db.query(
-                            `UPDATE material_requests 
-                             SET status = $3, wo_id = $1, updated_at = CURRENT_TIMESTAMP 
-                             WHERE id = $2`,
-                            [workOrder.id, reqRow.id, finalStatus]
+                            `UPDATE material_requests SET wo_id = $1, status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`,
+                            [workOrder.id, finalStatus, reqId]
+                        );
+                    } else if (newStatus === 'CERRADA' && prevStatus !== 'CERRADA' && reqRow.status !== 'Entregado') {
+                        // Order just closed and this request was already linked but not yet completed
+                        await processMaterials(reqRow.items, 'deduct');
+                        await db.query(
+                            `UPDATE material_requests SET status = 'Entregado', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                            [reqId]
                         );
                     }
                 }
             } catch (err) {
                 console.error('Error updating material requests for WO:', err);
             }
+        }
+
+        // --- Handle direct materials deduction/restoration on status change ---
+        if (newStatus === 'CERRADA' && prevStatus !== 'CERRADA') {
+            await processMaterials(workOrder.materials_used, 'deduct');
+        } else if (newStatus !== 'CERRADA' && prevStatus === 'CERRADA') {
+            await processMaterials(workOrder.materials_used, 'restore');
         }
 
         // Fetch updated work order with relations
@@ -377,53 +331,38 @@ const updateWorkOrderStatus = async (req, res) => {
         const prevStatus = workOrder.status;
         await workOrder.update({ status });
 
-        // Handle Material Requests based on state transition
+        // Handle Material Requests and Direct Materials based on state transition
         if (prevStatus !== 'CERRADA' && status === 'CERRADA') {
+            // 1. Linked Material Requests (regardless of status, as long as linked)
             const linkedRequests = await db.query(
-                "SELECT * FROM material_requests WHERE wo_id = $1 AND status = 'Asignado'",
+                "SELECT * FROM material_requests WHERE wo_id = $1",
                 [workOrder.id]
             );
             for (const reqRow of linkedRequests.rows) {
-                const items = typeof reqRow.items === 'string' ? JSON.parse(reqRow.items) : reqRow.items;
-                for (const reqItem of items) {
-                    if (reqItem.quantity_requested) {
-                        let invItem = null;
-                        if (reqItem.id) invItem = await Inventory.findByPk(reqItem.id);
-                        if (!invItem && reqItem.sku) invItem = await Inventory.findOne({ where: { code: reqItem.sku } });
-                        if (invItem) {
-                            const q = parseFloat(reqItem.quantity_requested);
-                            if (!isNaN(q)) {
-                                invItem.current_stock = Math.max(0, invItem.current_stock - q);
-                                await invItem.save();
-                            }
-                        }
-                    }
+                if (reqRow.status !== 'Completado') {
+                    await processMaterials(reqRow.items, 'deduct');
+                    await db.query("UPDATE material_requests SET status = 'Completado', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [reqRow.id]);
                 }
-                await db.query("UPDATE material_requests SET status = 'Completado' WHERE id = $1", [reqRow.id]);
             }
+
+            // 2. Direct Materials
+            await processMaterials(workOrder.materials_used, 'deduct');
+
         } else if (prevStatus === 'CERRADA' && status !== 'CERRADA') {
+            // Restore inventory if order is re-opened
+            
+            // 1. Linked Material Requests
             const linkedRequests = await db.query(
                 "SELECT * FROM material_requests WHERE wo_id = $1 AND status = 'Completado'",
                 [workOrder.id]
             );
             for (const reqRow of linkedRequests.rows) {
-                const items = typeof reqRow.items === 'string' ? JSON.parse(reqRow.items) : reqRow.items;
-                for (const reqItem of items) {
-                    if (reqItem.quantity_requested) {
-                        let invItem = null;
-                        if (reqItem.id) invItem = await Inventory.findByPk(reqItem.id);
-                        if (!invItem && reqItem.sku) invItem = await Inventory.findOne({ where: { code: reqItem.sku } });
-                        if (invItem) {
-                            const q = parseFloat(reqItem.quantity_requested);
-                            if (!isNaN(q)) {
-                                invItem.current_stock = invItem.current_stock + q;
-                                await invItem.save();
-                            }
-                        }
-                    }
-                }
-                await db.query("UPDATE material_requests SET status = 'Asignado' WHERE id = $1", [reqRow.id]);
+                await processMaterials(reqRow.items, 'restore');
+                await db.query("UPDATE material_requests SET status = 'Asignado', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [reqRow.id]);
             }
+
+            // 2. Direct Materials
+            await processMaterials(workOrder.materials_used, 'restore');
         }
 
         res.json(workOrder);
@@ -465,6 +404,10 @@ const addSignature = async (req, res) => {
 // @access  Private
 const deleteWorkOrder = async (req, res) => {
     try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'No autorizado. Solo los administradores pueden eliminar órdenes.' });
+        }
+
         const workOrder = await WorkOrder.findByPk(req.params.id);
 
         if (!workOrder) {

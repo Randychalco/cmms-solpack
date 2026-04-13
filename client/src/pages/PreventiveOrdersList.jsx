@@ -63,6 +63,19 @@ const PreventiveOrdersList = () => {
         }
     };
 
+    const handleDelete = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm('¿Estás seguro de eliminar esta orden preventiva?')) return;
+
+        try {
+            await api.delete(`/preventive/executions/${id}`);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting execution:', error);
+            alert('Error al eliminar la orden preventiva');
+        }
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'PENDIENTE': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -153,9 +166,20 @@ const PreventiveOrdersList = () => {
                                         {resolveMachineTitle(exe)}
                                     </h3>
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border tracking-tight ${getStatusColor(exe.status)} shadow-sm`}>
-                                    {exe.status}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border tracking-tight ${getStatusColor(exe.status)} shadow-sm`}>
+                                        {exe.status}
+                                    </span>
+                                    {user?.role === 'admin' && (
+                                        <button
+                                            onClick={(e) => handleDelete(e, exe.id)}
+                                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Eliminar Orden"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             
                             <p className="text-xs text-slate-600 mb-5 line-clamp-2 italic font-medium">

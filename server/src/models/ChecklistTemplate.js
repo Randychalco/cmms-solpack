@@ -20,6 +20,11 @@ const ChecklistTemplate = sequelize.define('ChecklistTemplate', {
         allowNull: true,
         defaultValue: 'default'
     },
+    type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'maintenance'
+    },
     items: {
         type: DataTypes.JSONB,
         allowNull: false,

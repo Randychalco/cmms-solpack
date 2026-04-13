@@ -269,7 +269,7 @@ async function loadMasterData() {
             const areaKey = `${record.planta}-${record.area}`;
             if (!areasMap.has(areaKey)) {
                 const [area] = await Area.findOrCreate({
-                    where: { name: record.area, plantId: plant.id }
+                    where: { name: record.area, plant_id: plant.id }
                 });
                 areasMap.set(areaKey, area);
                 console.log(`  Área creada/encontrada: ${record.area}`);
@@ -280,7 +280,7 @@ async function loadMasterData() {
             const machineKey = `${areaKey}-${record.equipo}`;
             if (!machinesMap.has(machineKey)) {
                 const [machine] = await Machine.findOrCreate({
-                    where: { name: record.equipo, areaId: area.id }
+                    where: { name: record.equipo, area_id: area.id }
                 });
                 machinesMap.set(machineKey, machine);
                 console.log(`    Equipo creado/encontrado: ${record.equipo}`);
@@ -289,7 +289,7 @@ async function loadMasterData() {
 
             // 4. Crear SubMáquina
             await SubMachine.findOrCreate({
-                where: { name: record.subEquipo, machineId: machine.id }
+                where: { name: record.subEquipo, machine_id: machine.id }
             });
             console.log(`      Sub-equipo creado/encontrado: ${record.subEquipo}`);
         }

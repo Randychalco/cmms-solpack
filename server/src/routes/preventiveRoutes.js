@@ -9,7 +9,8 @@ const {
     getExecutions,
     getExecutionById,
     createExecution,
-    updateExecution
+    updateExecution,
+    deleteExecution
 } = require('../controllers/preventiveController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -25,5 +26,6 @@ router.get('/executions', protect, getExecutions);
 router.get('/executions/:id', protect, getExecutionById);
 router.post('/executions', protect, createExecution);
 router.put('/executions/:id', protect, updateExecution);
+router.delete('/executions/:id', protect, deleteExecution);
 
 module.exports = router;

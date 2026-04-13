@@ -44,11 +44,8 @@ const WorkOrderCreate = () => {
     const [areas, setAreas] = useState([]);
     const [machines, setMachines] = useState([]);
     const [subMachines, setSubMachines] = useState([]);
-    // List of technicians
-    const technicians = [
-        'LBERROSPI', 'MJUAREZ', 'RCABEZAS', 'VCOÑES', 'BSAPAICO',
-        'HVENTURA', 'EALEGRE', 'JRAMOS', 'RCHALCO', 'ILOBATON', 'LCENTENO'
-    ];
+    // List of technicians fetched from DB
+    const [technicians, setTechnicians] = useState([]);
 
     const [formData, setFormData] = useState({
         plant_id: '',
@@ -72,6 +69,8 @@ const WorkOrderCreate = () => {
         status: 'ABIERTA',
         technician_signature: '',
         operator_signature: '',
+        leader_technician_name: '',
+        supervisor_name: '',
         criticality: 'MEDIO'
     });
 
@@ -104,10 +103,24 @@ const WorkOrderCreate = () => {
         }
     };
 
+    const fetchTechnicians = async () => {
+        try {
+            const { data } = await api.get('/users');
+            // Filter technicians or admins
+            const techs = data
+                .filter(u => u.role === 'technician' || u.role === 'admin' || u.role === 'supervisor')
+                .map(u => u.name.toUpperCase());
+            setTechnicians(techs);
+        } catch (error) {
+            console.error('Error fetching technicians:', error);
+        }
+    };
+
     // Fetch initial data
     useEffect(() => {
         fetchPlants();
         fetchPendingRequests();
+        fetchTechnicians();
     }, []);
 
     const fetchAreas = async (plantId) => {
@@ -604,23 +617,40 @@ const WorkOrderCreate = () => {
 
                         {/* 14-15. Firmas */}
                         {/* 14-15. Firmas (Nombres) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-slate-700 font-bold mb-2">TÉCNICO LÍDER (AUTOMÁTICO)</label>
-                                <div className="p-3 bg-gray-100 rounded border border-gray-300 text-gray-700">
-                                    {formData.technician_id ? formData.technician_id.split(',')[0] : 'Seleccione un técnico arriba'}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-3">
+                                <SignaturePad
+                                    label="FIRMA TÉCNICO LÍDER"
+                                    value={formData.technician_signature}
+                                    onChange={(val) => setFormData({ ...formData, technician_signature: val })}
+                                />
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nombre del Técnico Líder</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre libre (puede ser externo)..."
+                                        className="w-full border p-2 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none font-bold"
+                                        value={formData.leader_technician_name || ''}
+                                        onChange={(e) => setFormData({ ...formData, leader_technician_name: e.target.value })}
+                                    />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-slate-700 font-bold mb-2">NOMBRE SUPERVISOR PRODUCCIÓN</label>
-                                <input
-                                    type="text"
-                                    name="operator_signature"
-                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={formData.operator_signature || ''}
-                                    onChange={handleChange}
-                                    placeholder="Ingrese nombre del supervisor"
+                            <div className="flex flex-col gap-3">
+                                <SignaturePad
+                                    label="FIRMA SUPERVISOR PRODUCCIÓN"
+                                    value={formData.operator_signature}
+                                    onChange={(val) => setFormData({ ...formData, operator_signature: val })}
                                 />
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nombre del Supervisor</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre libre (puede ser externo)..."
+                                        className="w-full border p-2 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none font-bold"
+                                        value={formData.supervisor_name || ''}
+                                        onChange={(e) => setFormData({ ...formData, supervisor_name: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

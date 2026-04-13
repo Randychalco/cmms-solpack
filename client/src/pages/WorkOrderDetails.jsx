@@ -123,193 +123,192 @@ const WorkOrderDetails = () => {
             drawHeader();
             let curY = marginTop;
 
-            // ── Meta Info ───────────────────────────────────────────────────
-            const metaRows = [
-                [`OT: ${wo.ticket_number || '-'}`, `Clase: ${wo.order_class || '-'}`, `Fecha Inicio: ${wo.start_date ? new Date(wo.start_date).toLocaleDateString('es-PE') : '-'}`],
-                [`Equipo: ${wo.Machine?.name || '-'}`, `Área: ${wo.Area?.name || '-'}`, `Estado: ${wo.status || '-'}`],
-            ];
-            autoTable(pdf, {
-                body: metaRows,
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 70 }, 2: { cellWidth: 'auto' } },
-            });
-            curY = pdf.lastAutoTable.finalY + 4;
-
-            // ── Separator line ────────────────────────────────────────────────
+            // ── Separator ─────────────────────────────────────────────────────
             pdf.setDrawColor(200, 200, 200);
             pdf.setLineWidth(0.4);
             pdf.line(marginX, curY, pdfWidth - marginX, curY);
-            curY += 4;
+            curY += 5;
 
-            const drawSectionTitle = (title) => {
-                if (curY > pdfHeight - 50) {
+            // Helper: dark section title matching Preventive style
+            const drawSectionTitle = (title, colorArr = [30, 30, 46]) => {
+                if (curY > pdfHeight - 55) {
                     pdf.addPage();
                     drawHeader();
-                    curY = marginTop + 4;
+                    curY = marginTop + 5;
                 }
-                pdf.setFontSize(9);
+                pdf.setFillColor(...colorArr);
+                pdf.rect(marginX, curY, pdfWidth - marginX * 2, 7, 'F');
+                pdf.setFontSize(8.5);
                 pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(30, 30, 46);
-                pdf.text(title.toUpperCase(), marginX, curY);
-                curY += 5;
+                pdf.setTextColor(255, 255, 255);
+                pdf.text(title.toUpperCase(), marginX + 3, curY + 5);
+                pdf.setTextColor(0);
+                curY += 10;
             };
 
-            // ── 1. UBICACIÓN DEL EQUIPO ────────────────────────────────────────
-            drawSectionTitle('UBICACIÓN DEL EQUIPO');
+            // ── 1. INFORMACIÓN DEL EQUIPO ─────────────────────────────────────
+            drawSectionTitle('1. Información del Equipo y Ubicación');
             autoTable(pdf, {
                 body: [
-                    [{ content: 'PLANTA:', fontStyle: 'bold' }, wo.Plant?.name || '-', { content: 'ÁREA:', fontStyle: 'bold' }, wo.Area?.name || '-'],
-                    [{ content: 'EQUIPO:', fontStyle: 'bold' }, wo.Machine?.name || '-', { content: 'SUB-EQUIPO:', fontStyle: 'bold' }, wo.SubMachine?.name || '-']
+                    [{ content: 'PLANTA:', fontStyle: 'bold' }, wo.Plant?.name || '-', { content: 'CONDICIÓN:', fontStyle: 'bold' }, wo.equipment_condition || '-'],
+                    [{ content: 'ÁREA:', fontStyle: 'bold' }, wo.Area?.name || '-', { content: 'ESTADO:', fontStyle: 'bold' }, wo.status || '-'],
+                    [{ content: 'EQUIPO:', fontStyle: 'bold' }, wo.Machine?.name || '-', { content: 'PRIORIDAD:', fontStyle: 'bold' }, wo.priority || '-'],
+                    [{ content: 'SUB-EQUIPO:', fontStyle: 'bold' }, wo.SubMachine?.name || '-', { content: 'GRUPO PLAN:', fontStyle: 'bold' }, wo.planning_group || '-'],
                 ],
                 startY: curY,
                 margin: { left: marginX, right: marginX },
                 styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 65 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } }
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                columnStyles: { 0: { cellWidth: 30, fontStyle: 'bold' }, 1: { cellWidth: 65 }, 2: { cellWidth: 28, fontStyle: 'bold' }, 3: { cellWidth: 'auto' } }
             });
-            curY = pdf.lastAutoTable.finalY + 4;
+            curY = pdf.lastAutoTable.finalY + 5;
 
-            // ── 2. DETALLE DE LA ORDEN ─────────────────────────────────────────
-            drawSectionTitle('DETALLE DE LA ORDEN');
+            // ── 2. DETALLE DE LA ORDEN ────────────────────────────────────────
+            drawSectionTitle('2. Detalle de la Orden');
             autoTable(pdf, {
                 body: [
-                    [{ content: 'CONDICIÓN EQUIPO:', fontStyle: 'bold' }, wo.equipment_condition || '-', { content: 'CRITICIDAD:', fontStyle: 'bold' }, wo.priority || '-'],
-                    [{ content: 'TÉCNICO(S):', fontStyle: 'bold' }, wo.technician_id || '-', { content: 'GRUPO PLAN:', fontStyle: 'bold' }, wo.planning_group || '-'],
-                    [{ content: 'FECHA TÉRMINO:', fontStyle: 'bold' }, wo.end_date ? `${new Date(wo.end_date).toLocaleDateString('es-PE')} ${wo.end_time || ''}` : '-', { content: 'HORA INICIO:', fontStyle: 'bold' }, wo.start_time || '-']
+                    [{ content: 'N° OT:', fontStyle: 'bold' }, wo.ticket_number || '-', { content: 'CLASE:', fontStyle: 'bold' }, wo.order_class || '-'],
+                    [{ content: 'TÉCNICO(S):', fontStyle: 'bold' }, wo.technician_id || '-', { content: 'FECHA INICIO:', fontStyle: 'bold' }, wo.start_date ? new Date(wo.start_date).toLocaleDateString('es-PE') : '-'],
+                    [{ content: 'HORA INICIO:', fontStyle: 'bold' }, wo.start_time || '-', { content: 'FECHA FIN:', fontStyle: 'bold' }, wo.end_date ? new Date(wo.end_date).toLocaleDateString('es-PE') : '-'],
                 ],
                 startY: curY,
                 margin: { left: marginX, right: marginX },
                 styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 55 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } }
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                columnStyles: { 0: { cellWidth: 30, fontStyle: 'bold' }, 1: { cellWidth: 65 }, 2: { cellWidth: 28, fontStyle: 'bold' }, 3: { cellWidth: 'auto' } }
             });
-            curY = pdf.lastAutoTable.finalY + 4;
+            curY = pdf.lastAutoTable.finalY + 5;
 
-            // ── 3. FALLA Y CAUSA ───────────────────────────────────────────────
-            drawSectionTitle('FALLA Y CAUSA');
+            // ── 3. FALLA Y CAUSA ─────────────────────────────────────────────
+            drawSectionTitle('3. Falla y Causa Raíz');
             autoTable(pdf, {
                 body: [
-                    [{ content: 'FALLA:', fontStyle: 'bold' }, wo.failure_description || '-'],
-                    [{ content: 'CAUSA:', fontStyle: 'bold' }, wo.failure_cause || '-']
+                    [{ content: 'DESCRIPCIÓN DE FALLA:', fontStyle: 'bold' }, wo.failure_description || 'No registrado'],
+                    [{ content: 'CAUSA RAÍZ:', fontStyle: 'bold' }, wo.failure_cause || 'No registrado'],
+                    [{ content: 'ACCIÓN REALIZADA:', fontStyle: 'bold' }, wo.action_taken || 'Pendiente de registro...'],
                 ],
                 startY: curY,
                 margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 'auto' } }
+                styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60], overflow: 'linebreak' },
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 'auto' } }
             });
-            curY = pdf.lastAutoTable.finalY + 4;
+            curY = pdf.lastAutoTable.finalY + 5;
 
-            // ── 4. ACCIÓN REALIZADA ────────────────────────────────────────────
-            drawSectionTitle('ACCIÓN REALIZADA');
-            autoTable(pdf, {
-                body: [
-                    [wo.action_taken || 'Pendiente de registro...']
-                ],
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain'
-            });
-            curY = pdf.lastAutoTable.finalY + 4;
-
-            // ── 5. MATERIALES UTILIZADOS ───────────────────────────────────────
-            drawSectionTitle('MATERIALES UTILIZADOS');
+            // ── 4. MATERIALES UTILIZADOS ──────────────────────────────────────
+            drawSectionTitle('4. Consumo de Materiales y Repuestos', [165, 71, 58]);
             const mats = [];
+
+            // Source 1: Solicitudes de materiales vinculadas
             linkedRequests.forEach(req => {
                 const items = typeof req.items === 'string' ? JSON.parse(req.items) : (req.items || []);
                 items.forEach(item => {
-                    mats.push([
-                        req.id.substring(0, 8).toUpperCase(),
-                        item.description,
-                        `${item.quantity_requested} ${item.unit_measure || 'un.'}`
-                    ]);
+                    mats.push([item.description || '-', `${item.quantity_requested} ${item.unit_measure || 'un.'}`]);
                 });
             });
+
+            // Source 2: materials_used (campo directo de la OT)
+            if (wo.materials_used) {
+                try {
+                    const directMats = typeof wo.materials_used === 'string' ? JSON.parse(wo.materials_used) : wo.materials_used;
+                    if (Array.isArray(directMats)) {
+                        directMats.forEach(m => {
+                            mats.push([m.name || m.description || '-', `${m.used_quantity || m.quantity || '-'} un.`]);
+                        });
+                    }
+                } catch (e) {
+                    // si es texto plano, mostrarlo como una sola fila
+                    mats.push([wo.materials_used, '-']);
+                }
+            }
 
             if (mats.length === 0) {
                 autoTable(pdf, {
-                    body: [['No se registraron materiales.']],
+                    body: [['No se registraron materiales en esta orden.']],
                     startY: curY,
                     margin: { left: marginX, right: marginX },
-                    styles: { fontSize: 8, fontStyle: 'italic', cellPadding: 2.5, textColor: [100, 100, 100] },
+                    styles: { fontSize: 8, fontStyle: 'italic', cellPadding: 2.5, textColor: [120, 120, 120] },
                     theme: 'plain'
                 });
-                curY = pdf.lastAutoTable.finalY + 4;
             } else {
                 autoTable(pdf, {
-                    head: [['SOLICITUD / SKU', 'DESCRIPCIÓN MINUCIOSA', 'CANT.']],
+                    head: [['Material / Repuesto', 'Cantidad']],
                     body: mats,
                     startY: curY,
                     margin: { left: marginX, right: marginX },
-                    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, overflow: 'linebreak', valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.3, textColor: [30, 30, 30] },
-                    headStyles: { fillColor: [30, 30, 46], textColor: [240, 240, 240], fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
-                    alternateRowStyles: { fillColor: [248, 249, 252] },
-                    columnStyles: { 0: { cellWidth: 40, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 20, halign: 'center' } }
+                    styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', textColor: [30, 30, 30] },
+                    headStyles: { fillColor: [165, 71, 58], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+                    alternateRowStyles: { fillColor: [253, 248, 246] },
+                    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 30, halign: 'center' } }
                 });
-                curY = pdf.lastAutoTable.finalY + 4;
+            }
+            curY = pdf.lastAutoTable.finalY + 5;
+
+
+            // ── 5. OBSERVACIONES ──────────────────────────────────────────────
+            if (wo.observations) {
+                drawSectionTitle('5. Observaciones');
+                autoTable(pdf, {
+                    body: [[wo.observations]],
+                    startY: curY,
+                    margin: { left: marginX, right: marginX },
+                    styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
+                    theme: 'plain'
+                });
+                curY = pdf.lastAutoTable.finalY + 5;
             }
 
-            // ── 6. OBSERVACIONES ───────────────────────────────────────────────
-            drawSectionTitle('OBSERVACIONES');
-            autoTable(pdf, {
-                body: [
-                    [wo.observations || 'Sin observaciones adicionales.']
-                ],
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 60] },
-                theme: 'plain'
-            });
-            curY = pdf.lastAutoTable.finalY + 4;
-
             // ── FIRMAS ────────────────────────────────────────────────────────
-            if (curY > pdfHeight - 40) {
+            if (curY > pdfHeight - 55) {
                 pdf.addPage();
                 drawHeader();
                 curY = marginTop + 10;
             } else {
-                curY += 20; // Extra room for signatures
+                curY += 15;
             }
 
-            // Draw signature lines
             pdf.setDrawColor(150, 150, 150);
             pdf.setLineWidth(0.3);
 
-            // Left signature (Technical)
-            pdf.line(marginX + 20, curY, marginX + 80, curY);
+            // Left: Técnico Líder
+            if (wo.technician_signature && wo.technician_signature.startsWith('data:image')) {
+                pdf.addImage(wo.technician_signature, 'PNG', marginX + 15, curY - 22, 50, 20);
+            }
+            pdf.line(marginX + 10, curY, marginX + 80, curY);
             pdf.setFontSize(8);
-            pdf.setFont("helvetica", "bold");
+            pdf.setFont('helvetica', 'bold');
             pdf.setTextColor(60, 60, 60);
-            pdf.text("TÉCNICO LÍDER", marginX + 50, curY + 5, { align: 'center' });
-            pdf.setFontSize(9);
-            pdf.setFont("helvetica", "normal");
-            pdf.text(wo.technician_id ? String(wo.technician_id).split(',')[0] : 'No asignado', marginX + 50, curY + 10, { align: 'center' });
-
-            // Right signature (Supervisor)
-            pdf.line(pdfWidth - marginX - 80, curY, pdfWidth - marginX - 20, curY);
+            pdf.text('TÉCNICO LÍDER', marginX + 45, curY + 5, { align: 'center' });
+            pdf.setFont('helvetica', 'normal');
             pdf.setFontSize(8);
-            pdf.setFont("helvetica", "bold");
-            pdf.setTextColor(60, 60, 60);
-            pdf.text("SUPERVISOR DE PRODUCCIÓN", pdfWidth - marginX - 50, curY + 5, { align: 'center' });
-            pdf.setFontSize(9);
-            pdf.setFont("helvetica", "normal");
-            pdf.text(wo.operator_signature || 'No registrado', pdfWidth - marginX - 50, curY + 10, { align: 'center' });
+            // Always print name
+            const techDisplayName = wo.leader_technician_name || wo.technician_id || 'No asignado';
+            pdf.text(techDisplayName, marginX + 45, curY + 10, { align: 'center' });
 
-            // Add footers to all pages
+            // Right: Supervisor
+            const rightX = pdfWidth - marginX - 80;
+            if (wo.operator_signature && wo.operator_signature.startsWith('data:image')) {
+                pdf.addImage(wo.operator_signature, 'PNG', rightX + 15, curY - 22, 50, 20);
+            }
+            pdf.line(rightX + 10, curY, rightX + 80, curY);
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(60, 60, 60);
+            pdf.text('SUPERVISOR DE PRODUCCIÓN', rightX + 45, curY + 5, { align: 'center' });
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            // Always print name
+            const supDisplayName = wo.supervisor_name || 'No registrado';
+            pdf.text(supDisplayName, rightX + 45, curY + 10, { align: 'center' });
+
+            // ── Apply header/footer to ALL pages ─────────────────────────────
             const totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 pdf.setPage(i);
-                
-                // Add page text to the top header box
                 pdf.setFontSize(8);
-                pdf.setFont("helvetica", "normal");
+                pdf.setFont('helvetica', 'normal');
                 pdf.setTextColor(0);
                 pdf.text(`Página: ${i} de ${totalPages}`, 152, 29);
-
                 drawFooter(i, totalPages);
             }
 
@@ -319,6 +318,7 @@ const WorkOrderDetails = () => {
             alert('Error al generar PDF: ' + error.message);
         }
     };
+
 
     const handleStatusChange = async (newStatus) => {
         setUpdating(true);
@@ -612,17 +612,25 @@ const WorkOrderDetails = () => {
                     <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">FIRMAS / RESPONSABLES</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
                                 <span className="block text-[10px] uppercase font-black text-slate-400 mb-2">TÉCNICO LÍDER</span>
-                                <div className="font-bold text-slate-800 text-lg">
-                                    {wo.technician_id ? String(wo.technician_id).split(',')[0] : 'No asignado'}
-                                </div>
+                                {wo.technician_signature && wo.technician_signature.startsWith('data:image') ? (
+                                    <img src={wo.technician_signature} alt="Firma Técnico" className="h-20 object-contain" />
+                                ) : (
+                                    <div className="font-bold text-slate-800 text-lg py-6">
+                                        {wo.technician_id ? String(wo.technician_id).split(',')[0] : 'No asignado'}
+                                    </div>
+                                )}
                             </div>
-                            <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
                                 <span className="block text-[10px] uppercase font-black text-slate-400 mb-2">SUPERVISOR DE PRODUCCIÓN</span>
-                                <div className="font-bold text-slate-800 text-lg">
-                                    {wo.operator_signature || 'No registrado'}
-                                </div>
+                                {wo.operator_signature && wo.operator_signature.startsWith('data:image') ? (
+                                    <img src={wo.operator_signature} alt="Firma Supervisor" className="h-20 object-contain" />
+                                ) : (
+                                    <div className="font-bold text-slate-800 text-lg py-6">
+                                        {wo.operator_signature || 'No registrado'}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </section>

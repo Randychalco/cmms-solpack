@@ -133,6 +133,16 @@ const WorkOrder = sequelize.define('WorkOrder', {
         allowNull: true,
         comment: 'Firma digital del maquinista (base64 o URL)'
     },
+    leader_technician_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nombre libre del técnico líder (puede ser externo)'
+    },
+    supervisor_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nombre libre del supervisor (puede ser externo)'
+    },
     // Estado
     status: {
         type: DataTypes.STRING,

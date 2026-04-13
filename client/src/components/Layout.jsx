@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Wrench, Package, ClipboardList, Menu, X, LogOut, CheckSquare, Users, FileText, PenTool, ShoppingCart, Calendar } from 'lucide-react';
+import { LayoutDashboard, Wrench, Package, ClipboardList, Menu, X, LogOut, CheckSquare, Users, FileText, PenTool, ShoppingCart, Calendar, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
@@ -42,6 +42,7 @@ const Layout = () => {
         { path: '/checklists', label: 'Checklists', icon: <CheckSquare size={20} /> },
         { path: '/repairs', label: 'Reparaciones', icon: <PenTool size={20} /> },
         { path: '/preventive-history', label: 'Mantenimiento Preventivo', icon: <Calendar size={20} /> },
+        { path: '/safety', label: 'Seguridad', icon: <ShieldAlert size={20} /> },
         { path: '/purchase-requests', label: 'Pedidos Compra', icon: <ShoppingCart size={20} /> },
     ];
 

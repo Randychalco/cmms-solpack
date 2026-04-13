@@ -53,11 +53,8 @@ const WorkOrderEdit = () => {
     const [machines, setMachines] = useState([]);
     const [subMachines, setSubMachines] = useState([]);
 
-    // List of technicians
-    const technicians = [
-        'LBERROSPI', 'MJUAREZ', 'RCABEZAS', 'VCOÑES', 'BSAPAICO',
-        'HVENTURA', 'EALEGRE', 'JRAMOS', 'RCHALCO', 'ILOBATON', 'LCENTENO'
-    ];
+    // List of technicians fetched from DB
+    const [technicians, setTechnicians] = useState([]);
 
     const [formData, setFormData] = useState({
         plant_id: '',
@@ -81,6 +78,8 @@ const WorkOrderEdit = () => {
         status: 'ABIERTA',
         technician_signature: '',
         operator_signature: '',
+        leader_technician_name: '',
+        supervisor_name: '',
         criticality: 'MEDIO'
     });
 
@@ -101,6 +100,13 @@ const WorkOrderEdit = () => {
             const linkedReqRes = await api.get(`/material-requests?wo_id=${id}`);
             // Fetch requests with no WO assigned yet (only En Proceso = available)
             const pendingReqRes = await api.get('/material-requests?status=En Proceso');
+
+            // 2.5 Fetch Developers / Technicians
+            const usersRes = await api.get('/users');
+            const techs = usersRes.data
+                .filter(u => u.role === 'technician' || u.role === 'admin' || u.role === 'supervisor')
+                .map(u => u.name.toUpperCase());
+            setTechnicians(techs);
 
             // Combine: linked requests (already assigned/completed) + free unassigned ones
             const allRelevantRequests = [...linkedReqRes.data, ...pendingReqRes.data];
@@ -152,10 +158,25 @@ const WorkOrderEdit = () => {
                 status: wo.status || 'ABIERTA',
                 technician_signature: wo.technician_signature || '',
                 operator_signature: wo.operator_signature || '',
+                leader_technician_name: wo.leader_technician_name || '',
+                supervisor_name: wo.supervisor_name || '',
                 criticality: wo.priority || 'MEDIO'
             });
 
+            // Load inventory for direct material search
+            const invRes = await api.get('/inventory');
+            setInventory(invRes.data || []);
+
+            // Load existing direct materials from materials_used field
+            if (wo.materials_used) {
+                try {
+                    const parsed = typeof wo.materials_used === 'string' ? JSON.parse(wo.materials_used) : wo.materials_used;
+                    if (Array.isArray(parsed)) setSpareItems(parsed);
+                } catch (e) { /* text field, ignore */ }
+            }
+
             setLoading(false);
+
         } catch (err) {
             console.error(err);
             setError('Error cargando la orden de trabajo.');
@@ -189,9 +210,37 @@ const WorkOrderEdit = () => {
     };
 
 
+    // Direct materials (spare items) state
+    const [spareSearch, setSpareSearch] = useState('');
+    const [showSpareDropdown, setShowSpareDropdown] = useState(false);
+    const [selectedSpare, setSelectedSpare] = useState(null);
+    const [spareQty, setSpareQty] = useState(1);
+    const [spareItems, setSpareItems] = useState([]);
+    const [inventory, setInventory] = useState([]);
+
+    const addSpareItem = () => {
+        if (!selectedSpare) return;
+        setSpareItems(prev => [...prev, {
+            id: Date.now(),
+            inventory_id: selectedSpare.id,
+            name: selectedSpare.name,
+            used_quantity: parseInt(spareQty)
+        }]);
+        setSelectedSpare(null);
+        setSpareSearch('');
+        setSpareQty(1);
+        setShowSpareDropdown(false);
+    };
+
+    const removeSpareItem = (itemId) => {
+        setSpareItems(prev => prev.filter(s => s.id !== itemId));
+    };
+
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         const upperValue = typeof value === 'string' ? value.toUpperCase() : value;
 
         // Handle cascading clears manually here instead of useEffect
@@ -226,10 +275,8 @@ const WorkOrderEdit = () => {
             // Map criticality back to priority for backend
             if (cleanedData.criticality) cleanedData.priority = cleanedData.criticality;
 
-            // Materials won't be modified from frontend on Edit directly.
-            // If we want to clear them, we pass null, but usually we just don't send the field 
-            // to keep what's in DB or we handle requests elsewhere.
-            // But since we want to remove the view, let's leave existing materials untouched by Edit.
+            // Serialize direct materials into materials_used field as JSON
+            cleanedData.materials_used = spareItems.length > 0 ? JSON.stringify(spareItems) : null;
 
             // Also attach selected material requests
             cleanedData.material_request_ids = selectedRequestIds;
@@ -678,6 +725,65 @@ const WorkOrderEdit = () => {
                             )}
                         </div>
 
+                        {/* Materiales Directos */}
+                        <div className="mb-6 p-4 border border-amber-200 bg-amber-50 rounded-lg">
+                            <label className="block text-amber-900 font-bold mb-3">MATERIALES USADOS EN LA ORDEN</label>
+                            <div className="flex gap-2 items-start mb-3">
+                                <div className="relative flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="🔍 Buscar material por nombre o código..."
+                                        className="w-full border p-2 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white"
+                                        value={spareSearch}
+                                        onChange={(e) => { setSpareSearch(e.target.value); setShowSpareDropdown(true); setSelectedSpare(null); }}
+                                        onFocus={() => setShowSpareDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowSpareDropdown(false), 150)}
+                                    />
+                                    {selectedSpare && (
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-300">
+                                                ✓ {selectedSpare.name}
+                                            </span>
+                                            <button type="button" onClick={() => { setSelectedSpare(null); setSpareSearch(''); }} className="text-red-400 text-xs">✕</button>
+                                        </div>
+                                    )}
+                                    {showSpareDropdown && spareSearch.trim().length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                            {inventory.filter(i =>
+                                                i.name?.toLowerCase().includes(spareSearch.toLowerCase()) ||
+                                                i.code?.toLowerCase().includes(spareSearch.toLowerCase())
+                                            ).slice(0, 12).map(i => (
+                                                <button key={i.id} type="button"
+                                                    onMouseDown={() => { setSelectedSpare(i); setSpareSearch(i.name); setShowSpareDropdown(false); }}
+                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-amber-50 border-b border-slate-100 last:border-0 flex justify-between">
+                                                    <span className="font-medium">{i.name}</span>
+                                                    <span className="text-xs text-slate-400">{i.code} · Stock: {i.stock ?? i.current_stock ?? '?'}</span>
+                                                </button>
+                                            ))}
+                                            {inventory.filter(i =>
+                                                i.name?.toLowerCase().includes(spareSearch.toLowerCase()) ||
+                                                i.code?.toLowerCase().includes(spareSearch.toLowerCase())
+                                            ).length === 0 && <div className="px-4 py-3 text-sm text-slate-400 italic">Sin resultados</div>}
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="number" min="1" value={spareQty}
+                                    onChange={e => setSpareQty(e.target.value)}
+                                    className="w-20 border p-2 rounded-lg text-sm" />
+                                <button type="button" onClick={addSpareItem} disabled={!selectedSpare}
+                                    className="bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white px-4 py-2 rounded-lg font-bold">AGREGAR</button>
+                            </div>
+                            <div className="space-y-2">
+                                {spareItems.map(s => (
+                                    <div key={s.id} className="flex justify-between items-center bg-white border border-amber-200 p-2 rounded text-sm">
+                                        <span className="font-medium text-amber-900">{s.name} — <span className="font-bold">Cant: {s.used_quantity}</span></span>
+                                        <button type="button" onClick={() => removeSpareItem(s.id)} className="text-red-500 font-bold text-xs">Eliminar</button>
+                                    </div>
+                                ))}
+                                {spareItems.length === 0 && <p className="text-xs text-slate-400 italic">No se han registrado materiales aún.</p>}
+                            </div>
+                        </div>
+
                         {/* 13. Observación */}
                         <div className="mb-4">
                             <label className="block text-gray-700 font-bold mb-2">OBSERVACIÓN</label>
@@ -693,23 +799,40 @@ const WorkOrderEdit = () => {
 
                         {/* 14-15. Firmas */}
                         {/* 14-15. Firmas (Nombres) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-slate-700 font-bold mb-2">TÉCNICO LÍDER (AUTOMÁTICO)</label>
-                                <div className="p-3 bg-gray-100 rounded border border-gray-300 text-gray-700">
-                                    {formData.technician_id ? formData.technician_id.split(',')[0] : 'Seleccione un técnico arriba'}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-3">
+                                <SignaturePad
+                                    label="FIRMA TÉCNICO LÍDER"
+                                    value={formData.technician_signature}
+                                    onChange={(val) => setFormData({ ...formData, technician_signature: val })}
+                                />
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nombre del Técnico Líder</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre libre (puede ser externo)..."
+                                        className="w-full border p-2 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none font-bold"
+                                        value={formData.leader_technician_name || ''}
+                                        onChange={(e) => setFormData({ ...formData, leader_technician_name: e.target.value })}
+                                    />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-slate-700 font-bold mb-2">NOMBRE SUPERVISOR PRODUCCIÓN</label>
-                                <input
-                                    type="text"
-                                    name="operator_signature"
-                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={formData.operator_signature || ''}
-                                    onChange={handleChange}
-                                    placeholder="Ingrese nombre del supervisor"
+                            <div className="flex flex-col gap-3">
+                                <SignaturePad
+                                    label="FIRMA SUPERVISOR PRODUCCIÓN"
+                                    value={formData.operator_signature}
+                                    onChange={(val) => setFormData({ ...formData, operator_signature: val })}
                                 />
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nombre del Supervisor</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre libre (puede ser externo)..."
+                                        className="w-full border p-2 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-400 outline-none font-bold"
+                                        value={formData.supervisor_name || ''}
+                                        onChange={(e) => setFormData({ ...formData, supervisor_name: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

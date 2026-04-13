@@ -1,4 +1,4 @@
-const { PreventivePlan, PreventiveExecution, Machine, User, Plant, Area } = require('../models');
+const { PreventivePlan, PreventiveExecution, Machine, SubMachine, User, Plant, Area } = require('../models');
 
 // --- PLANS ---
 
@@ -92,6 +92,8 @@ const getExecutions = async (req, res) => {
         const executions = await PreventiveExecution.findAll({
             include: [
                 { model: PreventivePlan, include: [Machine] },
+                { model: Machine, attributes: ['id', 'name'] },
+                { model: SubMachine, attributes: ['id', 'name'] },
                 { model: User, as: 'Executor', attributes: ['id', 'name'] }
             ],
             order: [['createdAt', 'DESC']]
@@ -111,6 +113,8 @@ const getExecutionById = async (req, res) => {
         const execution = await PreventiveExecution.findByPk(req.params.id, {
             include: [
                 { model: PreventivePlan, include: [Machine] },
+                { model: Machine, attributes: ['id', 'name'] },
+                { model: SubMachine, attributes: ['id', 'name'] },
                 { model: User, as: 'Executor', attributes: ['id', 'name'] },
                 { model: Plant, attributes: ['name'] },
                 { model: Area, attributes: ['name'] }
@@ -131,12 +135,12 @@ const createExecution = async (req, res) => {
     try {
         const { 
             preventive_plan_id, 
-            plant_id, area_id, machine_ids,
+            plant_id, area_id, machine_ids, machine_id, sub_machine_id,
             equipment_condition, criticality, action_performed, planning_groups,
             start_date, end_date, start_time, end_time,
             responsible_technicians, leader_technician_name, supervisor_name,
             task_results, spare_results, general_observations,
-            scheduled_date 
+            scheduled_date, technician_signature, supervisor_signature 
         } = req.body;
         
         let initial_task_results = task_results || [];
@@ -163,9 +167,13 @@ const createExecution = async (req, res) => {
             }
         }
 
+        console.log('--- CREATING PV EXECUTION ---');
+        console.log('Tech Sig Length:', technician_signature ? technician_signature.length : 'NULL');
+        console.log('Sup Sig Length:', supervisor_signature ? supervisor_signature.length : 'NULL');
+
         const execution = await PreventiveExecution.create({
             preventive_plan_id,
-            plant_id, area_id, machine_ids,
+            plant_id, area_id, machine_ids, machine_id, sub_machine_id,
             status: 'PENDIENTE',
             order_class: 'MANTENIMIENTO PREVENTIVO',
             equipment_condition, criticality, action_performed, planning_groups,
@@ -175,7 +183,9 @@ const createExecution = async (req, res) => {
             responsible_technicians, leader_technician_name, supervisor_name,
             task_results: initial_task_results,
             spare_results: initial_spare_results,
-            general_observations
+            general_observations,
+            technician_signature: technician_signature || null,
+            supervisor_signature: supervisor_signature || null
         });
         
         res.status(201).json(execution);
@@ -197,7 +207,8 @@ const updateExecution = async (req, res) => {
             status, task_results, spare_results, general_observations,
             equipment_condition, criticality, action_performed, planning_groups,
             start_date, end_date, start_time, end_time,
-            responsible_technicians, leader_technician_name, supervisor_name
+            responsible_technicians, leader_technician_name, supervisor_name,
+            technician_signature, supervisor_signature
         } = req.body;
         
         const updateData = {
@@ -215,7 +226,9 @@ const updateExecution = async (req, res) => {
             end_time: end_time !== undefined ? end_time : execution.end_time,
             responsible_technicians: responsible_technicians !== undefined ? responsible_technicians : execution.responsible_technicians,
             leader_technician_name: leader_technician_name !== undefined ? leader_technician_name : execution.leader_technician_name,
-            supervisor_name: supervisor_name !== undefined ? supervisor_name : execution.supervisor_name
+            supervisor_name: supervisor_name !== undefined ? supervisor_name : execution.supervisor_name,
+            technician_signature: technician_signature !== undefined ? technician_signature : execution.technician_signature,
+            supervisor_signature: supervisor_signature !== undefined ? supervisor_signature : execution.supervisor_signature
         };
 
         if (status === 'COMPLETADO' && execution.status !== 'COMPLETADO') {
@@ -242,6 +255,28 @@ const updateExecution = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+// @desc    Delete a preventive execution
+// @route   DELETE /api/preventive/executions/:id
+// @access  Private/Admin
+const deleteExecution = async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'No autorizado. Solo los administradores pueden eliminar órdenes.' });
+        }
+
+        const execution = await PreventiveExecution.findByPk(req.params.id);
+
+        if (!execution) {
+            return res.status(404).json({ message: 'Orden preventiva no encontrada' });
+        }
+
+        await execution.destroy();
+        res.json({ message: 'Orden preventiva eliminada correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error en el servidor al intentar eliminar la orden' });
+    }
+};
 
 module.exports = {
     getPreventivePlans,
@@ -252,5 +287,6 @@ module.exports = {
     getExecutions,
     getExecutionById,
     createExecution,
-    updateExecution
+    updateExecution,
+    deleteExecution
 };

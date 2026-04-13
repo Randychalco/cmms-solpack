@@ -120,14 +120,26 @@ const deleteExecution = async (req, res) => {
 // @route   POST /api/checklists/execution
 // @access  Private
 const saveExecution = async (req, res) => {
-    const { id, wo_id, template_id, results, overall_status, observation } = req.body;
+    const { 
+        id, wo_id, template_id, results, overall_status, observation,
+        technician_signature, supervisor_signature, technician_name, supervisor_name
+    } = req.body;
 
     try {
         // If an execution ID is provided, update it directly
         if (id) {
             const updated = await db.query(
-                'UPDATE checklist_executions SET results = $1, overall_status = $2, observation = $3, date = NOW() WHERE id = $4 RETURNING *',
-                [JSON.stringify(results), overall_status, observation, id]
+                `UPDATE checklist_executions 
+                 SET results = $1, overall_status = $2, observation = $3, 
+                     technician_signature = $4, supervisor_signature = $5, 
+                     technician_name = $6, supervisor_name = $7,
+                     date = NOW() 
+                 WHERE id = $8 RETURNING *`,
+                [
+                    JSON.stringify(results), overall_status, observation, 
+                    technician_signature, supervisor_signature, technician_name, supervisor_name,
+                    id
+                ]
             );
             return res.json(updated.rows[0]);
         }
@@ -142,8 +154,17 @@ const saveExecution = async (req, res) => {
             if (existing.rows.length > 0) {
                 // Update
                 const updated = await db.query(
-                    'UPDATE checklist_executions SET results = $1, overall_status = $2, observation = $3, date = NOW() WHERE wo_id = $4 RETURNING *',
-                    [JSON.stringify(results), overall_status, observation, wo_id]
+                    `UPDATE checklist_executions 
+                     SET results = $1, overall_status = $2, observation = $3, 
+                         technician_signature = $4, supervisor_signature = $5, 
+                         technician_name = $6, supervisor_name = $7,
+                         date = NOW() 
+                     WHERE wo_id = $8 RETURNING *`,
+                    [
+                        JSON.stringify(results), overall_status, observation, 
+                        technician_signature, supervisor_signature, technician_name, supervisor_name,
+                        wo_id
+                    ]
                 );
                 return res.json(updated.rows[0]);
             }
@@ -151,8 +172,14 @@ const saveExecution = async (req, res) => {
 
         // Insert new execution (wo_id can be null here for standalone checklists)
         const newExecution = await db.query(
-            'INSERT INTO checklist_executions (wo_id, template_id, executed_by, results, overall_status, observation) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [wo_id || null, template_id || null, req.user.id, JSON.stringify(results), overall_status, observation]
+            `INSERT INTO checklist_executions 
+             (wo_id, template_id, executed_by, results, overall_status, observation, 
+              technician_signature, supervisor_signature, technician_name, supervisor_name) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [
+                wo_id || null, template_id || null, req.user.id, JSON.stringify(results), overall_status, observation,
+                technician_signature, supervisor_signature, technician_name, supervisor_name
+            ]
         );
 
         // If Critical, logic to auto-generate follow-up OT could go here

@@ -1,458 +1,618 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Save, CheckSquare, Package, ArrowLeft, Activity, FileText, FileSpreadsheet } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { 
+    Calendar, Clock, CheckCircle, Package, Users, 
+    FileText, Download, Edit, ArrowLeft, Activity,
+    Shield, MapPin, HardDrive, Check, Save
+} from 'lucide-react';
+import SignaturePad from '../components/SignaturePad';
 
 const ACTIVITY_CODES = [
-    { code: 'MEC', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { code: 'ELE', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    { code: 'LUB', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-    { code: 'NEU', color: 'bg-sky-100 text-sky-800 border-sky-200' },
-    { code: 'HID', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-    { code: 'EST', color: 'bg-slate-100 text-slate-800 border-slate-200' },
-    { code: 'LIM', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' }
+    { code: 'LIM', label: 'Limpieza', color: 'bg-emerald-100 text-emerald-800' },
+    { code: 'CAM', label: 'Cambio', color: 'bg-teal-100 text-teal-800' },
+    { code: 'RI', label: 'Inspección', color: 'bg-blue-100 text-blue-800' },
+    { code: 'RL', label: 'Lubricación', color: 'bg-amber-100 text-amber-800' },
+    { code: 'NEU', label: 'Neumático', color: 'bg-sky-100 text-sky-800' },
+    { code: 'HID', label: 'Hidráulico', color: 'bg-cyan-100 text-cyan-800' },
+    { code: 'MEC', label: 'Mecánico', color: 'bg-slate-50 text-slate-600' },
+    { code: 'ELE', label: 'Eléctrico', color: 'bg-yellow-100 text-yellow-800' }
 ];
 
 const PreventiveExecutionDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
-    
-    const [execution, setExecution] = useState(null);
-    const [taskResults, setTaskResults] = useState([]);
-    const [spareResults, setSpareResults] = useState([]);
-    const [generalObs, setGeneralObs] = useState('');
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    // Edit states for when order is not completed
+    const [taskResults, setTaskResults] = useState([]);
+    const [spareResults, setSpareResults] = useState([]);
+    const [generalObs, setGeneralObs] = useState('');
+    const [techSignature, setTechSignature] = useState(null);
+    const [supSignature, setSupSignature] = useState(null);
+    const [techName, setTechName] = useState('');
+    const [supName, setSupName] = useState('');
+
     useEffect(() => {
-        const fetchExecution = async () => {
+        const loadDetail = async () => {
             try {
-                const { data } = await api.get(`/preventive/executions/${id}`);
-                setExecution(data);
-                setTaskResults(data.task_results || []);
-                setSpareResults(data.spare_results || []);
-                setGeneralObs(data.general_observations || '');
+                const res = await api.get(`/preventive/executions/${id}`);
+                setData(res.data);
+                setTaskResults(res.data.task_results || []);
+                setSpareResults(res.data.spare_results || []);
+                setGeneralObs(res.data.general_observations || '');
+                setTechSignature(res.data.technician_signature);
+                setSupSignature(res.data.supervisor_signature);
+                setTechName(res.data.leader_technician_name || '');
+                setSupName(res.data.supervisor_name || '');
                 setLoading(false);
-            } catch (error) {
-                console.error(error);
-                alert('No se pudo cargar la ejecución');
-                navigate('/preventive-plans');
+            } catch (err) {
+                console.error(err);
+                setLoading(false);
             }
         };
-        fetchExecution();
-    }, [id, navigate]);
-
-    const generatePDF = () => {
-        try {
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const marginX = 10;
-            const marginTop = 35;
-
-            // ── Helper: draw header ──────────────────────────────────────────
-            const drawHeader = () => {
-                pdf.setDrawColor(0);
-                pdf.setLineWidth(0.3);
-
-                // Box 1: Logo
-                pdf.rect(10, 10, 50, 20);
-                pdf.setFontSize(22);
-                pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(205, 50, 40); 
-                pdf.text('SOLPACK', 14, 20);
-                pdf.setFontSize(7.5);
-                pdf.setTextColor(120, 120, 120);
-                pdf.text('SOLUCIONES DE EMBALAJE', 14, 25);
-
-                // Box 2: Title
-                pdf.rect(60, 10, 90, 20);
-                pdf.setFontSize(10);
-                pdf.setTextColor(0);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text('REGISTRO', 105, 16, { align: 'center' });
-                pdf.line(60, 19, 150, 19);
-                pdf.setFontSize(11);
-                pdf.setFont("helvetica", "bold");
-                pdf.text('ORDEN DE MANTENIMIENTO PREVENTIVO', 105, 26, { align: 'center' });
-
-                // Box 3: Meta
-                pdf.rect(150, 10, 50, 20);
-                pdf.setFontSize(8);
-                pdf.setFont("helvetica", "normal");
-                pdf.setTextColor(0);
-                pdf.text('Código: MAN-RE-08', 152, 14);
-                pdf.text('Versión: 01', 152, 19);
-                pdf.text('Fecha: 01/01/2026', 152, 24);
-            };
-
-            const drawFooter = (pageNum, totalPages) => {
-                const fY = pdfHeight - 20;
-                pdf.setDrawColor(0);
-                pdf.setLineWidth(0.3);
-                pdf.rect(marginX, fY, pdfWidth - 2 * marginX, 12);
-                pdf.line(marginX + 60, fY, marginX + 60, fY + 12);
-                pdf.line(marginX + 130, fY, marginX + 130, fY + 12);
-                pdf.setFontSize(8);
-                pdf.setFont("helvetica", "normal");
-                pdf.setTextColor(0);
-                pdf.text('Elaborado por:', marginX + 2, fY + 4);
-                pdf.text('Supervisor de mantenimiento', marginX + 2, fY + 9);
-                pdf.text('Revisado por:', marginX + 62, fY + 4);
-                pdf.text('Sub gerente de mantenimiento', marginX + 62, fY + 9);
-                pdf.text('Aprobado por:', marginX + 132, fY + 4);
-                pdf.text('Gerente de operaciones', marginX + 132, fY + 9);
-                pdf.setFont("helvetica", "bold");
-                pdf.text('Confidencial: Prohibido reproducir total o parcialmente sin autorización del Gerente General', pdfWidth / 2, fY + 17, { align: 'center' });
-            };
-
-            drawHeader();
-            let curY = marginTop;
-
-            const drawSectionTitle = (title) => {
-                if (curY > pdfHeight - 50) {
-                    pdf.addPage();
-                    drawHeader();
-                    curY = marginTop + 4;
-                }
-                pdf.setFontSize(9);
-                pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(30, 30, 46);
-                pdf.text(title.toUpperCase(), marginX, curY);
-                curY += 5;
-            };
-
-            // ── 0. INFORMACIÓN GENERAL ───────────────────────────────────────
-            drawSectionTitle('INFORMACIÓN GENERAL DEL EQUIPO Y LA ORDEN');
-            const metaRows = [
-                [{ content: 'PLANTA:', fontStyle: 'bold' }, execution.Plant?.name || '-', { content: 'ÁREA:', fontStyle: 'bold' }, execution.Area?.name || '-'],
-                [{ content: 'EQUIPO(S):', fontStyle: 'bold' }, execution.PreventivePlan?.Machine?.name || (execution.machine_ids?.length > 0 ? 'Múltiples Equipos' : 'Equipo General'), { content: 'PLAN:', fontStyle: 'bold' }, execution.PreventivePlan?.name || 'Manual'],
-                [{ content: 'CONDICIÓN:', fontStyle: 'bold' }, execution.equipment_condition || '-', { content: 'CRITICIDAD:', fontStyle: 'bold' }, execution.criticality || '-']
-            ];
-            autoTable(pdf, {
-                body: metaRows,
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 65 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } }
-            });
-            curY = pdf.lastAutoTable.finalY + 6;
-
-            // ── 0.1 TIEMPOS Y RESPONSABLES ────────────────────────────────────
-            drawSectionTitle('TIEMPOS Y RESPONSABLES');
-            autoTable(pdf, {
-                body: [
-                    [{ content: 'FECHA INICIO:', fontStyle: 'bold' }, `${execution.start_date ? new Date(execution.start_date).toLocaleDateString('es-PE') : '-'} ${execution.start_time || ''}`, { content: 'FECHA FIN:', fontStyle: 'bold' }, `${execution.end_date ? new Date(execution.end_date).toLocaleDateString('es-PE') : '-'} ${execution.end_time || ''}`],
-                    [{ content: 'TÉCNICO LÍDER:', fontStyle: 'bold' }, execution.leader_technician_name || '-', { content: 'SUPERVISOR:', fontStyle: 'bold' }, execution.supervisor_name || '-'],
-                    [{ content: 'EQUIPO TÉCNICO:', fontStyle: 'bold' }, execution.responsible_technicians?.join(', ') || 'No registrado', '', '']
-                ],
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2, textColor: [40, 40, 60] },
-                theme: 'plain',
-                columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 65 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } }
-            });
-            curY = pdf.lastAutoTable.finalY + 8;
-
-            // ── 1. TAREAS DE RUTINA ──────────────────────────────────────────
-            drawSectionTitle('TAREAS DE RUTINA / ACTIVIDADES REALIZADAS');
-            const tasksData = (taskResults || []).map(task => {
-                return [
-                    task.task_code || 'MEC',
-                    task.task_description,
-                    task.checked ? 'COMPLETADO' : 'PENDIENTE'
-                ];
-            });
-
-            autoTable(pdf, {
-                head: [['CÓDIGO', 'ACCIÓN / DESCRIPCIÓN DE LA TAREA', 'RESULTADO']],
-                body: tasksData,
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5 },
-                headStyles: { fillColor: [30, 30, 46], textColor: [240, 240, 240] },
-                columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 30, halign: 'center' } }
-            });
-            curY = pdf.lastAutoTable.finalY + 8;
-
-            // ── 2. REPUESTOS UTILIZADOS ───────────────────────────────────────
-            const hasSpares = execution.spare_results && execution.spare_results.length > 0;
-            if (hasSpares) {
-                drawSectionTitle('REPUESTOS Y MATERIALES UTILIZADOS');
-                const sparesData = (spareResults || []).map(sp => {
-                    return [
-                        sp.name || 'Repuesto',
-                        sp.expected_quantity || 0,
-                        sp.used_quantity || 0,
-                        'UN.'
-                    ];
-                });
-
-                autoTable(pdf, {
-                    head: [['DESCRIPCIÓN REPUESTO', 'CANT. PREVISTA', 'CANT. USADA', 'UNIDAD']],
-                    body: sparesData,
-                    startY: curY,
-                    margin: { left: marginX, right: marginX },
-                    styles: { fontSize: 8, cellPadding: 2.5 },
-                    headStyles: { fillColor: [245, 158, 11], textColor: [255, 255, 255] },
-                    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 30, halign: 'center' }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 20, halign: 'center' } }
-                });
-                curY = pdf.lastAutoTable.finalY + 8;
-            }
-
-            // ── 2.5 ACCIÓN REALIZADA ──────────────────────────────────────────
-            if (execution.action_performed) {
-                drawSectionTitle('TRABAJO TÉCNICO EFECTUADO');
-                autoTable(pdf, {
-                    body: [[execution.action_performed]],
-                    startY: curY,
-                    margin: { left: marginX, right: marginX },
-                    styles: { fontSize: 8, cellPadding: 2.5 },
-                    theme: 'plain'
-                });
-                curY = pdf.lastAutoTable.finalY + 6;
-            }
-
-            // ── 3. OBSERVACIONES ───────────────────────────────────────────────
-            drawSectionTitle('OBSERVACIONES GENERALES');
-            autoTable(pdf, {
-                body: [[generalObs || 'Sin novedades adicionales durante el mantenimiento.']],
-                startY: curY,
-                margin: { left: marginX, right: marginX },
-                styles: { fontSize: 8, cellPadding: 2.5, fontStyle: 'italic' },
-                theme: 'plain'
-            });
-            curY = pdf.lastAutoTable.finalY + 20;
-
-            // ── 4. FIRMAS ──────────────────────────────────────────────────────
-            if (curY > pdfHeight - 40) {
-                pdf.addPage();
-                drawHeader();
-                curY = marginTop + 20;
-            }
-
-            pdf.setDrawColor(150, 150, 150);
-            pdf.setLineWidth(0.3);
-            
-            // Left signature (Technical)
-            pdf.line(marginX + 20, curY, marginX + 80, curY);
-            pdf.setFontSize(8);
-            pdf.setFont("helvetica", "bold");
-            pdf.text("TÉCNICO LÍDER", marginX + 50, curY + 5, { align: 'center' });
-            pdf.setFont("helvetica", "normal");
-            pdf.text(execution.leader_technician_name || 'Nombre:', marginX + 50, curY + 10, { align: 'center' });
-
-            // Right signature (Supervisor)
-            pdf.line(pdfWidth - marginX - 80, curY, pdfWidth - marginX - 20, curY);
-            pdf.text("SUPERVISOR DE PRODUCCIÓN", pdfWidth - marginX - 50, curY + 5, { align: 'center' });
-            pdf.text(execution.supervisor_name || 'Nombre:', pdfWidth - marginX - 50, curY + 10, { align: 'center' });
-
-            // Finalize PDF
-            const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(8);
-                pdf.text(`Página: ${i} de ${totalPages}`, 152, 29);
-                drawFooter(i, totalPages);
-            }
-
-            pdf.save(`MP_PV-${execution.id}.pdf`);
-        } catch (error) {
-            console.error('Error al exportar PDF:', error);
-            alert('Error al generar PDF: ' + error.message);
-        }
-    };
-
-    const handleExportExcel = async () => {
-        try {
-            const response = await api.get(`/export/preventive-order/${id}`, {
-                responseType: 'blob'
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `orden_preventiva_${id}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            console.error('Error al exportar a Excel:', error);
-            alert('No se pudo generar el archivo Excel');
-        }
-    };
+        loadDetail();
+    }, [id]);
 
     const handleSave = async (complete = false) => {
         try {
             setSaving(true);
-            const status = complete ? 'COMPLETADO' : 'EN_PROGRESO';
+            console.log('Enviando datos de firma:', { tech: !!techSignature, sup: !!supSignature });
             await api.put(`/preventive/executions/${id}`, {
-                status,
                 task_results: taskResults,
                 spare_results: spareResults,
-                general_observations: generalObs
+                general_observations: generalObs,
+                technician_signature: techSignature,
+                supervisor_signature: supSignature,
+                leader_technician_name: techName || data.leader_technician_name,
+                supervisor_name: supName || data.supervisor_name,
+                status: complete ? 'COMPLETADO' : 'EN_PROGRESO'
             });
-            alert(complete ? 'Orden Preventiva completada' : 'Progreso guardado');
-            if (complete) navigate('/preventive-plans');
-        } catch (error) {
-            console.error(error);
+            alert(complete ? 'Mantenimiento Finalizado con Éxito' : 'Progreso Guardado');
+            setSaving(false);
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
             alert('Error al guardar');
         } finally {
             setSaving(false);
         }
     };
 
-    const toggleTask = (taskId) => {
-        if(execution.status === 'COMPLETADO') return;
-        setTaskResults(prev => prev.map(t => 
-            t.task_id === taskId ? { ...t, checked: !t.checked } : t
-        ));
+    const generatePDF = () => {
+        try {
+            if (!data) return;
+            const execution = data;
+            const doc = new jsPDF();
+            
+            const marginX = 14;
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = doc.internal.pageSize.getHeight();
+
+            // Helper to draw the complex table header from the image
+            const drawHeader = (pageNum, totalPages) => {
+                const headerY = 10;
+                const headerHeight = 25;
+                const col1Width = 50;
+                const col3Width = 45;
+                const col2Width = pdfWidth - (marginX * 2) - col1Width - col3Width;
+
+                doc.setDrawColor(0);
+                doc.setLineWidth(0.3);
+
+                doc.rect(marginX, headerY, pdfWidth - (marginX * 2), headerHeight);
+                doc.line(marginX + col1Width, headerY, marginX + col1Width, headerY + headerHeight);
+                doc.line(pdfWidth - marginX - col3Width, headerY, pdfWidth - marginX - col3Width, headerY + headerHeight);
+
+                doc.setTextColor(165, 71, 58);
+                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.text('SOLPACK', marginX + (col1Width / 2), headerY + 12, { align: 'center' });
+                doc.setTextColor(100, 116, 139);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('SOLUCIONES DE EMBALAJE', marginX + (col1Width / 2), headerY + 18, { align: 'center' });
+
+                doc.setTextColor(0);
+                doc.setFontSize(10);
+                doc.text('REGISTRO', marginX + col1Width + (col2Width / 2), headerY + 10, { align: 'center' });
+                doc.line(marginX + col1Width, headerY + 14, pdfWidth - marginX - col3Width, headerY + 14);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('REPORTE DE MANTENIMIENTO PREVENTIVO', marginX + col1Width + (col2Width / 2), headerY + 20, { align: 'center' });
+
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica', 'normal');
+                const metaX = pdfWidth - marginX - col3Width + 2;
+                doc.text(`Código: MAN-RE-07`, metaX, headerY + 6);
+                doc.text(`Versión: 03`, metaX, headerY + 11);
+                doc.text(`Fecha: ${execution.start_date || '01/01/2026'}`, metaX, headerY + 16);
+                doc.text(`Página: ${pageNum} de ${totalPages}`, metaX, headerY + 21);
+                
+                doc.line(pdfWidth - marginX - col3Width, headerY + 7.5, pdfWidth - marginX, headerY + 7.5);
+                doc.line(pdfWidth - marginX - col3Width, headerY + 12.5, pdfWidth - marginX, headerY + 12.5);
+                doc.line(pdfWidth - marginX - col3Width, headerY + 17.5, pdfWidth - marginX, headerY + 17.5);
+            };
+
+            const drawFooter = (pageNum, totalPages) => {
+                const footerY = pdfHeight - 30;
+                const colWidth = (pdfWidth - (marginX * 2)) / 3;
+
+                doc.setDrawColor(0);
+                doc.setLineWidth(0.2);
+
+                doc.rect(marginX, footerY, pdfWidth - (marginX * 2), 12);
+                doc.line(marginX + colWidth, footerY, marginX + colWidth, footerY + 12);
+                doc.line(marginX + (colWidth * 2), footerY, marginX + (colWidth * 2), footerY + 12);
+
+                doc.setFontSize(7.5);
+                doc.setTextColor(0);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.text('Elaborado por:', marginX + 2, footerY + 4);
+                doc.text('Supervisor de mantenimiento', marginX + 2, footerY + 9);
+                
+
+
+                doc.text('Revisado por:', marginX + colWidth + 2, footerY + 4);
+                doc.text('Sub gerente de mantenimiento', marginX + colWidth + 2, footerY + 9);
+
+                doc.text('Aprobado por:', marginX + (colWidth * 2) + 2, footerY + 4);
+                doc.text('Gerente de operaciones', marginX + (colWidth * 2) + 2, footerY + 9);
+                
+
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7);
+                doc.text('Confidencial: Prohibido reproducir total o parcialmente sin autorización del Gerente General', pdfWidth / 2, footerY + 18, { align: 'center' });
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6);
+                doc.setTextColor(150);
+                doc.text(`Sistema SOLPACK - Pág. ${pageNum} de ${totalPages}`, pdfWidth - marginX, pdfHeight - 5, { align: 'right' });
+            };
+
+            let currentY = 42;
+
+            const drawSectionTitle = (title, color = [30, 64, 175]) => {
+                doc.setFillColor(248, 250, 252);
+                doc.rect(marginX, currentY, pdfWidth - (marginX * 2), 8, 'F');
+                doc.setTextColor(color[0], color[1], color[2]);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, marginX + 3, currentY + 6);
+                currentY += 12;
+            };
+
+            // 1. INFO GENERAL
+            drawSectionTitle('1. INFORMACIÓN DEL EQUIPO Y UBICACIÓN');
+            autoTable(doc, {
+                startY: currentY,
+                body: [
+                    ['PLANTA:', execution.Plant?.name || '-', 'FECHA INICIO:', execution.start_date || '-'],
+                    ['ÁREA:', execution.Area?.name || '-', 'FECHA TÉRMINO:', execution.end_date || '-'],
+                    ['MÁQUINA:', execution.Machine?.name || '-', 'HORA INICIO:', execution.start_time || '-'],
+                    ['SUB-MÁQUINA:', execution.SubMachine?.name || '-', 'HORA TÉRMINO:', execution.end_time || '-'],
+                    ['CRITICIDAD:', execution.criticality || '-', 'CONDICIÓN:', execution.equipment_condition || '-']
+                ],
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2, lineColor: [226, 232, 240] },
+                columnStyles: { 
+                    0: { fontStyle: 'bold', fillColor: [241, 245, 249], cellWidth: 35 },
+                    2: { fontStyle: 'bold', fillColor: [241, 245, 249], cellWidth: 35 }
+                }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 10;
+
+            // 2. RESPONSABLES
+            drawSectionTitle('2. PERSONAL RESPONSABLE DE LA ORDEN');
+            const techList = Array.isArray(execution.responsible_technicians) ? execution.responsible_technicians : [];
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(51, 65, 85);
+            if (techList.length > 0) {
+                const techs = techList.join(' • ');
+                const splitTechs = doc.splitTextToSize(techs, pdfWidth - (marginX * 2) - 10);
+                doc.text(splitTechs, marginX + 5, currentY);
+                currentY += (splitTechs.length * 5) + 8;
+            } else {
+                doc.text('No se asignaron técnicos generales.', marginX + 5, currentY);
+                currentY += 10;
+            }
+
+            // 3. ACTIVIDADES
+            const tasks = Array.isArray(execution.task_results) ? execution.task_results : [];
+            if (tasks.length > 0) {
+                drawSectionTitle('3. CONTROL DE ACTIVIDADES Y TAREAS');
+                const taskRows = tasks.map(t => [
+                    t.description || t.task_description || '-', 
+                    Array.isArray(t.assigned_technicians) ? t.assigned_technicians.join(', ') : '-',
+                    t.status || (t.checked ? 'COMPLETADO' : 'PENDIENTE'),
+                    t.comment || '-'
+                ]);
+                autoTable(doc, {
+                    startY: currentY,
+                    head: [['Actividad / Tarea', 'Responsables', 'Estado', 'Observación']],
+                    body: taskRows,
+                    theme: 'grid',
+                    headStyles: { fillColor: [51, 65, 85], fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7.5, cellPadding: 3 },
+                    columnStyles: { 
+                        1: { cellWidth: 35 },
+                        2: { cellWidth: 25, halign: 'center' },
+                        3: { cellWidth: 40 }
+                    }
+                });
+                currentY = doc.lastAutoTable.finalY + 10;
+            }
+
+            // 4. REPUESTOS
+            const spares = Array.isArray(execution.spare_results) ? execution.spare_results : [];
+            if (spares.length > 0) {
+                drawSectionTitle('4. CONSUMO DE MATERIALES Y REPUESTOS');
+                const spareRows = spares.map(s => [s.name || '-', s.used_quantity || 0]);
+                autoTable(doc, {
+                    startY: currentY,
+                    head: [['Material / Repuesto', 'Cantidad']],
+                    body: spareRows,
+                    theme: 'striped',
+                    headStyles: { fillColor: [180, 83, 9], fontSize: 8 },
+                    bodyStyles: { fontSize: 8 }
+                });
+                currentY = doc.lastAutoTable.finalY + 10;
+            }
+
+            // 5. DESCRIPCIÓN DEL TRABAJO Y OBSERVACIONES
+            if (execution.action_performed || execution.general_observations) {
+                if (currentY > pdfHeight - 60) { doc.addPage(); currentY = 45; }
+                drawSectionTitle('5. DESCRIPCIÓN DEL TRABAJO Y OBSERVACIONES');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.text('TRABAJO EFECTUADO:', marginX + 2, currentY);
+                currentY += 5;
+                doc.setFont('helvetica', 'normal');
+                const splitAction = doc.splitTextToSize(execution.action_performed || 'Sin detalle técnico.', pdfWidth - (marginX * 2) - 10);
+                doc.text(splitAction, marginX + 5, currentY);
+                currentY += (splitAction.length * 5) + 8;
+
+                doc.setFont('helvetica', 'bold');
+                doc.text('OBSERVACIONES GENERALES:', marginX + 2, currentY);
+                currentY += 5;
+                doc.setFont('helvetica', 'normal');
+                const splitObs = doc.splitTextToSize(execution.general_observations || 'Sin observaciones.', pdfWidth - (marginX * 2) - 10);
+                doc.text(splitObs, marginX + 5, currentY);
+                currentY += (splitObs.length * 5) + 15;
+            }
+
+            // ── 6. FIRMAS ────────────────────────────────────────────────────────
+            if (currentY > pdfHeight - 40) {
+                doc.addPage();
+                currentY = 40;
+            } else {
+                currentY += 20; // Extra room for signatures
+            }
+
+            doc.setDrawColor(150, 150, 150);
+            doc.setLineWidth(0.3);
+
+            const activeTechSig = techSignature || execution.technician_signature;
+            const activeSupSig = supSignature || execution.supervisor_signature;
+
+            // Left signature (Technical)
+            if (activeTechSig && activeTechSig.startsWith('data:image')) {
+                doc.addImage(activeTechSig, 'PNG', marginX + 25, currentY - 25, 50, 25);
+            }
+            doc.line(marginX + 20, currentY, marginX + 80, currentY);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(60, 60, 60);
+            doc.text("TÉCNICO LÍDER", marginX + 50, currentY + 5, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            const activeTechName = techName || execution.leader_technician_name || (Array.isArray(execution.responsible_technicians) && execution.responsible_technicians.length > 0 ? execution.responsible_technicians[0] : 'No asignado');
+            doc.text(activeTechName, marginX + 50, currentY + 10, { align: 'center' });
+
+            // Right signature (Supervisor)
+            if (activeSupSig && activeSupSig.startsWith('data:image')) {
+                doc.addImage(activeSupSig, 'PNG', pdfWidth - marginX - 75, currentY - 25, 50, 25);
+            }
+            doc.line(pdfWidth - marginX - 80, currentY, pdfWidth - marginX - 20, currentY);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(60, 60, 60);
+            doc.text("SUPERVISOR / ENCARGADO", pdfWidth - marginX - 50, currentY + 5, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            
+            const activeSupName = supName || execution.supervisor_name || 'No registrado';
+            doc.text(activeSupName, pdfWidth - marginX - 50, currentY + 10, { align: 'center' });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                drawHeader(i, pageCount);
+                drawFooter(i, pageCount);
+            }
+
+            doc.save(`SOLPACK_PREVENTIVO_${execution.id}_${execution.Machine?.name || 'EQUIPO'}.pdf`);
+        } catch (err) {
+            console.error(err);
+            alert('Error al generar PDF: ' + err.message);
+        }
     };
 
-    const updateSpareUsed = (spareId, val) => {
-        if(execution.status === 'COMPLETADO') return;
-        setSpareResults(prev => prev.map(s => 
-            s.spare_id === spareId ? { ...s, used_quantity: parseInt(val) || 0 } : s
-        ));
-    };
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-500 font-bold animate-pulse">Cargando expediente técnico...</p>
+            </div>
+        </div>
+    );
 
-    if (loading) return <div className="p-4">Cargando...</div>;
+    if (!data) return <div className="p-8 text-center text-red-500 font-bold">Error: Orden no encontrada</div>;
 
-    const planTasks = execution?.PreventivePlan?.tasks || [];
-    const planSpares = execution?.PreventivePlan?.spares || [];
-    const isCompleted = execution.status === 'COMPLETADO';
+    const isCompleted = data.status === 'COMPLETADO';
 
     return (
-        <div className="p-6 max-w-5xl mx-auto">
-            <button onClick={() => navigate('/preventive-plans')} className="text-blue-600 flex items-center mb-4"><ArrowLeft size={16} className="mr-1"/> Volver</button>
-            
-            <div className="bg-white rounded-lg shadow p-6 border-t-4 border-blue-600">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="min-h-screen bg-[#f8fafc] pb-20">
+            {/* Header / Navigation */}
+            <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-4 flex justify-between items-center shadow-sm backdrop-blur-md bg-white/80">
+                <div className="flex items-center gap-6">
+                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500">
+                        <ArrowLeft size={20} />
+                    </button>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-black text-slate-900 tracking-tight">{execution.PreventivePlan?.name}</h1>
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest border ${isCompleted ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
-                                {execution.status}
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${
+                                data.status === 'COMPLETADO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                                {data.status?.replace('_', ' ')}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{data.Machine?.name} • {data.Area?.name}</p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={generatePDF} className="flex items-center gap-2 bg-slate-100 text-slate-600 px-5 py-2.5 rounded-2xl font-black text-xs hover:bg-slate-200 transition-all active:scale-95">
+                        <Download size={16} /> EXPORTAR PDF
+                    </button>
+                    {!isCompleted && (
+                        <>
+                            <button 
+                                onClick={() => handleSave(true)} 
+                                disabled={saving}
+                                className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-2xl font-black text-xs shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <CheckCircle size={16} />}
+                                FINALIZAR MANTENIMIENTO
+                            </button>
+                            <button onClick={() => navigate(`/preventive/execution/${data.id}/edit`)} className="flex items-center gap-2 bg-white text-slate-900 border-2 border-slate-100 px-5 py-2.5 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95">
+                                <Edit size={16} /> EDITAR
+                            </button>
+                        </>
+                    )}
+                    {isCompleted && (
+                        <button onClick={() => navigate(`/preventive/execution/${data.id}/edit`)} className="flex items-center gap-2 bg-white text-slate-900 border-2 border-slate-100 px-5 py-2.5 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95">
+                            <Edit size={16} /> REVISAR / EDITAR
+                        </button>
+                    )}
+                </div>
+            </nav>
+
+            <main className="max-w-7xl mx-auto px-6 py-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    {/* COLUMNA IZQUIERDA: INFORMACIÓN Y TÉCNICOS */}
+                    <div className="lg:col-span-1 space-y-8">
+                        {/* 1. INFORMACIÓN GENERAL */}
+                        <section className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                <MapPin className="text-blue-600" size={24} /> 1. Ubicación
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">UNIDAD / PLANTA</p>
+                                    <p className="font-bold text-slate-700">{data.Plant?.name}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ÁREA DE PRODUCCIÓN</p>
+                                    <p className="font-bold text-slate-700">{data.Area?.name}</p>
+                                </div>
+                                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">EQUIPO TÉCNICO</p>
+                                    <p className="font-bold text-blue-900 text-lg">{data.Machine?.name}</p>
+                                    {data.SubMachine && (
+                                        <p className="text-sm font-bold text-blue-600/70 mt-1 italic">Sub-Equipo: {data.SubMachine.name}</p>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        <p className="text-slate-500 mt-1 font-medium flex items-center gap-2">
-                            <Activity size={14}/> Máquina: {execution.PreventivePlan?.Machine?.name || 'Múltiples / General'}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <button
-                            onClick={handleExportExcel}
-                            className="flex-1 md:flex-none bg-white border border-slate-200 text-emerald-700 px-4 py-2.5 rounded-xl font-bold shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2 transition-all"
-                        >
-                            <FileSpreadsheet size={18} /> <span className="hidden sm:inline">Excel</span>
-                        </button>
-                        <button
-                            onClick={generatePDF}
-                            className="flex-1 md:flex-none bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2 transition-all"
-                        >
-                            <FileText size={18} /> <span className="hidden sm:inline">PDF</span>
-                        </button>
-                        <button
-                            onClick={() => navigate(`/preventive/execution/${id}/edit`)}
-                            className="flex-1 md:flex-none bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2 transition-all"
-                        >
-                            <Save size={18} /> Editar
-                        </button>
-                    </div>
-                </div>
+                        </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Tasks Checklist */}
-                    <div>
-                        <h3 className="font-bold flex items-center gap-2 mb-4 border-b pb-2 text-slate-700">
-                            <CheckSquare className="text-blue-500" /> Tareas de Rutina
-                        </h3>
-                        <div className="space-y-3">
-                            {planTasks.map(task => {
-                                const tr = taskResults.find(t => t.task_id === task.id) || {};
-                                const codeConfig = ACTIVITY_CODES.find(c => c.code === (task.task_code || 'MEC')) || ACTIVITY_CODES[0];
-                                return (
-                                    <div key={task.id} className="flex items-start p-3 bg-white border shadow-sm rounded hover:bg-slate-50 cursor-pointer" onClick={() => toggleTask(task.id)}>
-                                        <input type="checkbox" className="w-5 h-5 mr-3 mt-0.5 cursor-pointer" checked={tr.checked || false} readOnly />
-                                        <div className="flex-1 flex gap-2 items-start">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-bold border ${codeConfig.color} mt-0.5 whitespace-nowrap`}>
-                                                {task.task_code || 'MEC'}
+                        {/* 2. PERSONAL RESPONSABLE */}
+                        <section className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                <Users className="text-indigo-600" size={24} /> 2. Responsables
+                            </h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">TÉCNICOS ASIGNADOS</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {data.responsible_technicians?.map((t, i) => (
+                                            <span key={i} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-xs font-bold border border-indigo-100">
+                                                {t}
                                             </span>
-                                            <span className={`${tr.checked ? "line-through text-slate-400" : "font-medium text-slate-800"} leading-tight`}>{task.task_description}</span>
-                                        </div>
+                                        ))}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">LÍDER</p>
+                                        <p className="text-sm font-bold text-slate-700">{data.leader_technician_name}</p>
+                                    </div>
+                                    <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">SUPERVISOR</p>
+                                        <p className="text-sm font-bold text-slate-700">{data.supervisor_name}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
-                    {/* Spares Allocation */}
-                    <div>
-                        <h3 className="font-bold flex items-center gap-2 mb-4 border-b pb-2 text-slate-700">
-                            <Package className="text-amber-500" /> Repuestos Proyectados
-                        </h3>
-                        <div className="space-y-3">
-                            {planSpares.map(sp => {
-                                const sr = spareResults.find(s => s.spare_id === sp.id) || {};
-                                return (
-                                    <div key={sp.id} className="bg-amber-50 border border-amber-200 p-3 rounded text-sm flex flex-col gap-2">
-                                        <div className="font-medium text-slate-800">{sp.name || 'Repuesto'}</div>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-xs text-slate-500">Requerido: {sp.expected_quantity} und.</span>
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs font-bold text-amber-800">CANT. USADA:</label>
-                                                <input 
-                                                    type="number" 
-                                                    min="0"
-                                                    value={sr.used_quantity || 0}
-                                                    onChange={e => updateSpareUsed(sp.id, e.target.value)}
-                                                    className="w-16 p-1 border rounded text-center font-bold"
-                                                    disabled={isCompleted}
-                                                />
+                    {/* COLUMNA DERECHA: RESULTADOS Y TRABAJO */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* 3. PLANIFICACIÓN DE ACTIVIDADES */}
+                        <section className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                <CheckCircle className="text-violet-600" size={24} /> 3. Planificación de Actividades
+                            </h3>
+                            {data.task_results?.length > 0 ? (
+                                <div className="space-y-3">
+                                    {data.task_results.map((task, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-slate-700">{task.description || task.task_description}</span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                    task.status === 'Observado' ? 'bg-amber-100 text-amber-700' :
+                                                    task.status === 'Finalizado' || task.status === 'Hecho' ? 'bg-emerald-100 text-emerald-700' :
+                                                    'bg-slate-200 text-slate-600'
+                                                }`}>
+                                                    {task.status || (task.checked ? 'Hecho' : 'Pendiente')}
+                                                </span>
                                             </div>
+
+                                            {/* RESPONSABLES POR ACTIVIDAD */}
+                                            {task.assigned_technicians?.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                                    {task.assigned_technicians.map((tech, i) => (
+                                                        <span key={i} className="text-[9px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase border border-indigo-200 shadow-sm">
+                                                            {tech}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {task.status === 'Observado' && task.comment && (
+                                                <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100 italic">
+                                                    <span className="font-bold text-amber-500 not-italic mr-1">Obs:</span>
+                                                    {task.comment}
+                                                </div>
+                                            )}
                                         </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                    <p className="text-slate-400 font-bold italic">No hay planificación específica registrada</p>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* 4. REPUESTOS Y MATERIALES */}
+                        <section className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+                            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                <Package className="text-amber-600" size={24} /> 4. Recambios y Materiales
+                            </h3>
+                            {data.spare_results?.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {data.spare_results.map((spare, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-5 bg-amber-50/50 border border-amber-100 rounded-2xl transition-all hover:bg-amber-100/50">
+                                            <span className="font-bold text-amber-900">{spare.name}</span>
+                                            <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black">
+                                                {spare.used_quantity} UND
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                    <p className="text-slate-400 font-bold italic">No se registraron cambios de repuestos en esta rutina</p>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* FIRMAS */}
+                        <section className="bg-slate-900 rounded-3xl p-8 shadow-2xl text-white relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                           
+                           <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                            <div className="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">FIRMA TÉCNICO LÍDER</p>
+                                {(techSignature || data.technician_signature) ? (
+                                    <div className="flex flex-col items-center gap-2 w-full">
+                                        <img src={techSignature || data.technician_signature} alt="Firma Técnico" className="h-28 object-contain filter grayscale hover:grayscale-0 transition-all duration-500" />
+                                        <button type="button" onClick={() => setTechSignature('')} className="text-red-400 text-[10px] font-bold uppercase tracking-widest hover:text-red-600 transition">
+                                            ✕ Borrar y firmar de nuevo
+                                        </button>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                ) : (
+                                    <SignaturePad 
+                                        value={techSignature} 
+                                        onChange={setTechSignature}
+                                        label="" 
+                                    />
+                                )}
+                                <div className="mt-6 pt-4 border-t border-slate-100 w-full">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Nombre del Técnico</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Escribe el nombre completo..."
+                                        className="w-full text-center bg-slate-50 border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 rounded-lg py-2 px-2 text-sm font-bold text-slate-800 outline-none transition-all"
+                                        value={techName}
+                                        onChange={(e) => setTechName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">FIRMA SUPERVISOR</p>
+                                {(supSignature || data.supervisor_signature) ? (
+                                    <div className="flex flex-col items-center gap-2 w-full">
+                                        <img src={supSignature || data.supervisor_signature} alt="Firma Supervisor" className="h-28 object-contain filter grayscale hover:grayscale-0 transition-all duration-500" />
+                                        <button type="button" onClick={() => setSupSignature('')} className="text-red-400 text-[10px] font-bold uppercase tracking-widest hover:text-red-600 transition">
+                                            ✕ Borrar y firmar de nuevo
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <SignaturePad 
+                                        value={supSignature} 
+                                        onChange={setSupSignature}
+                                        label="" 
+                                    />
+                                )}
+                                <div className="mt-6 pt-4 border-t border-slate-100 w-full">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Nombre del Supervisor</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Escribe el nombre completo..."
+                                        className="w-full text-center bg-slate-50 border border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 rounded-lg py-2 px-2 text-sm font-bold text-slate-800 outline-none transition-all"
+                                        value={supName}
+                                        onChange={(e) => setSupName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Save signatures + names button */}
+                            <div className="md:col-span-2 flex justify-center mt-2">
+                                <button 
+                                    onClick={() => handleSave(false)} 
+                                    disabled={saving}
+                                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-3 rounded-2xl shadow-lg shadow-indigo-200 transition-all disabled:opacity-50"
+                                >
+                                    <Save size={18} />
+                                    {saving ? 'Guardando...' : 'Guardar Firmas y Nombres'}
+                                </button>
+                            </div>
+                        </section>
+                        </section>
                     </div>
                 </div>
-
-                <div className="mt-8">
-                    <h3 className="font-bold mb-2">Observaciones Generales</h3>
-                    <textarea 
-                        className="w-full border p-3 rounded focus:ring-2 focus:ring-blue-500"
-                        rows="3"
-                        disabled={isCompleted}
-                        value={generalObs}
-                        onChange={e => setGeneralObs(e.target.value)}
-                        placeholder="Novedades durante el mantenimiento preventivo..."
-                    />
-                </div>
-
-                {!isCompleted && (
-                    <div className="mt-6 flex justify-end gap-4 border-t pt-4">
-                        <button 
-                            onClick={() => handleSave(false)} 
-                            disabled={saving}
-                            className="px-6 py-2 border rounded hover:bg-slate-50 font-medium"
-                        >
-                            Guardar Progreso
-                        </button>
-                        <button 
-                            onClick={() => handleSave(true)}
-                            disabled={saving}
-                            className="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700 font-bold flex items-center gap-2"
-                        >
-                            <Save size={18} /> Finalizar Mantenimiento
-                        </button>
-                    </div>
-                )}
-            </div>
+            </main>
         </div>
     );
 };

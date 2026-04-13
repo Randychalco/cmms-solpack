@@ -169,6 +169,16 @@ const MaterialRequests = () => {
             }
         }
     };
+    
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            await api.put(`/material-requests/${id}`, { status: newStatus });
+            fetchRequests(); // Refresh list to reflect changes
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Error al actualizar el estado de la solicitud.');
+        }
+    };
 
     const handleExportExcel = async () => {
         try {
@@ -192,8 +202,7 @@ const MaterialRequests = () => {
     const getStatusBadge = (status) => {
         switch (status) {
             case 'En Proceso': return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center gap-1"><Clock size={12} /> En Proceso</span>;
-            case 'Asignado': return <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex items-center gap-1"><FileEdit size={12} /> Asignado a OT</span>;
-            case 'Completado': return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle2 size={12} /> Completado</span>;
+            case 'Entregado': return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle2 size={12} /> Entregado</span>;
             case 'Rechazado': return <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1"><XCircle size={12} /> Rechazado</span>;
             default: return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
         }
@@ -253,8 +262,7 @@ const MaterialRequests = () => {
                     >
                         <option value="Todos">Todos los estados</option>
                         <option value="En Proceso">En Proceso</option>
-                        <option value="Asignado">Asignado a OT</option>
-                        <option value="Completado">Completado</option>
+                        <option value="Entregado">Entregado</option>
                         <option value="Rechazado">Rechazado</option>
                     </select>
                 </div>
@@ -327,9 +335,23 @@ const MaterialRequests = () => {
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            {getStatusBadge(req.status)}
+                                            <select
+                                                value={req.status}
+                                                onChange={(e) => handleStatusChange(req.id, e.target.value)}
+                                                className={`text-xs font-bold py-1.5 px-3 rounded-xl border-0 ring-1 ring-inset outline-none cursor-pointer transition-all hover:ring-2
+                                                    ${req.status === 'En Proceso' ? 'bg-yellow-50 text-yellow-700 ring-yellow-200' : 
+                                                      req.status === 'Entregado' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 
+                                                      req.status === 'Rechazado' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 
+                                                      'bg-slate-50 text-slate-700 ring-slate-200'}`}
+                                            >
+                                                <option value="En Proceso">En Proceso</option>
+                                                <option value="Entregado">Entregado</option>
+                                                <option value="Rechazado">Rechazado</option>
+                                            </select>
                                             {req.wo_id && (
-                                                <div className="text-xs text-slate-400 mt-1">OT ID vinculada</div>
+                                                <div className="text-[10px] uppercase font-bold text-slate-400 mt-1.5 ml-1 flex items-center gap-1">
+                                                    <FileEdit size={10} /> OT Vinculada
+                                                </div>
                                             )}
                                         </td>
                                         <td className="p-4 text-sm text-slate-600">

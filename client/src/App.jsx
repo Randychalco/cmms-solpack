@@ -23,6 +23,7 @@ import PreventiveExecutionDetails from './pages/PreventiveExecutionDetails';
 import NewPreventiveOrder from './pages/NewPreventiveOrder';
 import PreventiveOrdersList from './pages/PreventiveOrdersList';
 import PreventiveExecutionEdit from './pages/PreventiveExecutionEdit';
+import SafetyChecklists from './pages/SafetyChecklists';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -67,6 +68,7 @@ function App() {
             <Route path="repairs" element={<Repairs />} />
             <Route path="purchase-requests" element={<PurchaseRequests />} />
             <Route path="checklists" element={<Checklists />} />
+            <Route path="safety" element={<SafetyChecklists />} />
             <Route path="preventive-plans" element={<PreventivePlans />} />
             <Route path="preventive-history" element={<PreventiveOrdersList />} />
             <Route path="preventive/new" element={<NewPreventiveOrder />} />

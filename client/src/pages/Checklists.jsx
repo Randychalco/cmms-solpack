@@ -179,6 +179,9 @@ const Checklists = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {templates
                     .filter(t => {
+                        // Filter by type
+                        if (t.type && t.type !== 'maintenance') return false;
+                        
                         if (activeModule === 'EXTRUSION_2') {
                             return ['EXTRUSION_2_SML1', 'EXTRUSION_2_SML2', 'EXTRUSION_2_EREMA1', 'EXTRUSION_2_EREMA2'].includes(t.asset_category);
                         }
@@ -189,8 +192,8 @@ const Checklists = () => {
                         // Try to safely parse items if needed
                         let parsedItems = typeof template.items === 'string' ? JSON.parse(template.items) : template.items;
                         let isMatrix = template.layout === 'sml2_matrix';
-                        let itemsCount = isMatrix ? (parsedItems.sections ? parsedItems.sections.length : 0) : (Array.isArray(parsedItems) ? parsedItems.length : 0);
-                        let previewItems = isMatrix ? (parsedItems.sections || []).map(s => ({ label: s.title })) : (Array.isArray(parsedItems) ? parsedItems : []);
+                        let itemsCount = isMatrix ? (parsedItems?.sections ? parsedItems.sections.length : 0) : (Array.isArray(parsedItems) ? parsedItems.length : 0);
+                        let previewItems = isMatrix ? (parsedItems?.sections || []).map(s => ({ label: s.title })) : (Array.isArray(parsedItems) ? parsedItems : []);
 
                         return (
                             <div

@@ -43,6 +43,22 @@ const ChecklistExecution = sequelize.define('ChecklistExecution', {
     date: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
+    },
+    technician_signature: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    supervisor_signature: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    technician_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    supervisor_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
     }
 }, {
     tableName: 'checklist_executions',

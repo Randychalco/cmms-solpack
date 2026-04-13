@@ -22,7 +22,7 @@ router.get('/plants', protect, async (req, res) => {
 router.get('/areas', protect, async (req, res) => {
     try {
         const { plantId } = req.query;
-        const whereClause = plantId ? { plantId } : {};
+        const whereClause = plantId ? { plant_id: plantId } : {};
         const areas = await Area.findAll({
             where: whereClause,
             order: [['name', 'ASC']]
@@ -40,7 +40,7 @@ router.get('/areas', protect, async (req, res) => {
 router.get('/areas/:plantId', protect, async (req, res) => {
     try {
         const areas = await Area.findAll({
-            where: { plantId: req.params.plantId },
+            where: { plant_id: req.params.plantId },
             order: [['name', 'ASC']]
         });
         res.json(areas);
@@ -69,7 +69,7 @@ router.get('/machines', protect, async (req, res) => {
 router.get('/machines/:areaId', protect, async (req, res) => {
     try {
         const machines = await Machine.findAll({
-            where: { areaId: req.params.areaId },
+            where: { area_id: req.params.areaId },
             order: [['name', 'ASC']]
         });
         res.json(machines);
@@ -85,7 +85,7 @@ router.get('/machines/:areaId', protect, async (req, res) => {
 router.get('/sub-machines/:machineId', protect, async (req, res) => {
     try {
         const subMachines = await SubMachine.findAll({
-            where: { machineId: req.params.machineId },
+            where: { machine_id: req.params.machineId },
             order: [['name', 'ASC']]
         });
         res.json(subMachines);

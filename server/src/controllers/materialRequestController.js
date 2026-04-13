@@ -1,4 +1,40 @@
 const db = require('../config/db');
+const { Inventory } = require('../models');
+
+// Helper to handle inventory deduction/restoration (Synchronized with workOrderController)
+const processMaterials = async (materialsData, action = 'deduct') => {
+    if (!materialsData) return;
+    try {
+        const materials = typeof materialsData === 'string' ? JSON.parse(materialsData) : materialsData;
+        if (!Array.isArray(materials)) return;
+        
+        for (const mat of materials) {
+            const qty = parseFloat(mat.used_quantity || mat.quantity_requested || mat.quantity || 0);
+            if (qty <= 0 || isNaN(qty)) continue;
+
+            let item = null;
+            const invId = mat.inventory_id || mat.id;
+            
+            if (invId && !isNaN(parseInt(invId))) {
+                item = await Inventory.findByPk(invId);
+            }
+            if (!item && mat.sku) {
+                item = await Inventory.findOne({ where: { code: mat.sku } });
+            }
+
+            if (item) {
+                if (action === 'deduct') {
+                    item.current_stock = Math.max(0, item.current_stock - qty);
+                } else if (action === 'restore') {
+                    item.current_stock = item.current_stock + qty;
+                }
+                await item.save();
+            }
+        }
+    } catch (err) {
+        console.error(`Error ${action}ing inventory for materials:`, err);
+    }
+};
 
 // Get all material requests
 exports.getMaterialRequests = async (req, res) => {
@@ -77,6 +113,16 @@ exports.updateMaterialRequest = async (req, res) => {
         const requestCheck = await db.query('SELECT * FROM material_requests WHERE id = $1', [id]);
         if (requestCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Material request not found' });
+        }
+
+        const prevStatus = requestCheck.rows[0].status;
+        const newStatus = status;
+
+        // Inventory deduction/restoration on manual status change
+        if (newStatus === 'Entregado' && prevStatus !== 'Entregado') {
+            await processMaterials(requestCheck.rows[0].items, 'deduct');
+        } else if (newStatus !== 'Entregado' && prevStatus === 'Entregado') {
+            await processMaterials(requestCheck.rows[0].items, 'restore');
         }
 
         let updateFields = [];

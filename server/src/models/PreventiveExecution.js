@@ -27,6 +27,22 @@ const PreventiveExecution = sequelize.define('PreventiveExecution', {
         type: DataTypes.JSONB,
         allowNull: true,
     },
+    machine_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'machines',
+            key: 'id'
+        }
+    },
+    sub_machine_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'sub_machines',
+            key: 'id'
+        }
+    },
     status: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -107,6 +123,16 @@ const PreventiveExecution = sequelize.define('PreventiveExecution', {
     general_observations: {
         type: DataTypes.TEXT,
         allowNull: true,
+    },
+    technician_signature: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Firma digital del técnico (base64)'
+    },
+    supervisor_signature: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Firma digital del supervisor (base64)'
     }
 }, {
     tableName: 'preventive_executions',
