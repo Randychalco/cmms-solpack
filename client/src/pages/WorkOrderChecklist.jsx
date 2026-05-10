@@ -104,7 +104,14 @@ const WorkOrderChecklist = () => {
             } else if (id) {
                 const { data: woData } = await api.get(`/work-orders/${id}`);
                 setWo(woData);
-                targetTemplate = rawTemplates.find(t => t.layout === 'sml2_matrix') || rawTemplates[0];
+                
+                const machineName = woData.Machine?.name || '';
+                // Look for a safety checklist matching the machine, prioritizing non-legacy ones
+                targetTemplate = rawTemplates.find(t => 
+                    t.type === 'safety' && 
+                    t.name.includes(machineName) && 
+                    !t.name.includes('[LEGACY]')
+                ) || rawTemplates.find(t => t.layout === 'matrix' || t.layout === 'sml2_matrix') || rawTemplates[0];
             }
 
             if (targetTemplate) {
