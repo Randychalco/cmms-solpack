@@ -61,7 +61,7 @@ const SafetyChecklists = () => {
                 </div>
                 <div className="flex flex-wrap gap-3">
                     <button
-                        onClick={() => navigate('/checklists/executions')}
+                        onClick={() => navigate('/checklists/executions?type=safety')}
                         className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all hover:scale-105 font-bold"
                     >
                         <History size={20} /> Historial General

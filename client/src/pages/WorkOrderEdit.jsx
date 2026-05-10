@@ -261,8 +261,19 @@ const WorkOrderEdit = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, targetStatus) => {
+        if (e) e.preventDefault();
+        
+        const finalStatus = targetStatus || formData.status;
+
+        if (finalStatus === 'CERRADA') {
+            if (!formData.action_taken || !formData.end_date || !formData.end_time || !formData.technician_signature || !formData.operator_signature) {
+                setError('Para CERRAR la orden directamente, debes completar la Acción Realizada, las Fechas de Término y ambas Firmas.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+        }
+
         setSaving(true);
         setError('');
 
@@ -270,7 +281,7 @@ const WorkOrderEdit = () => {
             // Validation of materials removed
 
             const cleanedData = Object.fromEntries(
-                Object.entries(formData).map(([key, value]) => [key, value === '' ? null : value])
+                Object.entries({ ...formData, status: finalStatus }).map(([key, value]) => [key, value === '' ? null : value])
             );
             // Map criticality back to priority for backend
             if (cleanedData.criticality) cleanedData.priority = cleanedData.criticality;
@@ -297,12 +308,17 @@ const WorkOrderEdit = () => {
                 <ArrowLeft size={20} className="mr-2" /> Cancelar y Volver
             </button>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold mb-6 text-slate-800">EDITAR ORDEN DE TRABAJO</h1>
+            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-t-blue-500">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-slate-800">EDITAR ORDEN DE TRABAJO</h1>
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold border border-slate-200">
+                        {formData.status}
+                    </span>
+                </div>
 
-                {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+                {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 border border-red-200 shadow-sm">{error}</div>}
 
-                <form onSubmit={handleSubmit}>
+                <form className="space-y-6">
                     {/* Jerarquía de Equipos */}
                     <div className="mb-6">
                         <h2 className="text-lg font-bold mb-3 text-slate-700">UBICACIÓN DEL EQUIPO</h2>
@@ -602,128 +618,7 @@ const WorkOrderEdit = () => {
                             </select>
                         </div>
 
-                        {/* 11.5 Material Requests pending attach */}
-                        <div className="mb-6 p-4 border border-indigo-200 bg-indigo-50 rounded-lg">
-                            <label className="block text-indigo-900 font-bold mb-2">SOLICITUDES DE MATERIALES ASIGNADAS Y EN PROCESO</label>
-                            <p className="text-sm text-indigo-700 mb-3">Vincula solicitudes creadas previas a esta Orden de Trabajo, o revisa las ya vinculadas.</p>
 
-                            {/* Selectable Requests List */}
-                            {pendingRequests.filter(req => req.status !== 'Completado').length === 0 ? (
-                                <p className="text-sm text-indigo-400 italic mb-4">No hay solicitudes pendientes o por asignar.</p>
-                            ) : (
-                                <details className="group bg-white border border-indigo-200 rounded-lg shadow-sm mb-4">
-                                    <summary className="p-3 cursor-pointer select-none list-none flex justify-between items-center bg-indigo-50 rounded-lg group-open:rounded-b-none group-open:border-b border-indigo-200 hover:bg-indigo-100 transition-colors">
-                                        <span className="font-bold text-indigo-900">
-                                            {selectedRequestIds.filter(id => {
-                                                const req = pendingRequests.find(r => r.id === id);
-                                                return req && req.status !== 'Completado';
-                                            }).length === 0
-                                                ? 'Seleccionar solicitudes...'
-                                                : `${selectedRequestIds.filter(id => {
-                                                    const req = pendingRequests.find(r => r.id === id);
-                                                    return req && req.status !== 'Completado';
-                                                }).length} solicitud(es) seleccionada(s)`}
-                                        </span>
-                                        <span className="transition duration-300 group-open:rotate-180">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
-                                                <polyline points="6 9 12 15 18 9"></polyline>
-                                            </svg>
-                                        </span>
-                                    </summary>
-                                    <div className="p-3 space-y-2 max-h-60 overflow-y-auto bg-slate-50/50">
-                                        {pendingRequests.filter(req => req.status !== 'Completado').map(req => {
-                                            const isSelected = selectedRequestIds.includes(req.id);
-
-                                            return (
-                                                <div
-                                                    key={req.id}
-                                                    className={`p-3 rounded-lg border transition cursor-pointer ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-indigo-200 hover:border-indigo-400'}`}
-                                                    onClick={() => {
-                                                        if (isSelected) {
-                                                            setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
-                                                        } else {
-                                                            setSelectedRequestIds(prev => [...prev, req.id]);
-                                                        }
-                                                    }}
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <div className={`text-xs font-mono mb-1 flex items-center gap-2 ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
-                                                                <span>ID: {req.id.substring(0, 8).toUpperCase()}</span>
-                                                                <span>•</span>
-                                                                <span>Por: {req.user_name || req.user_id}</span>
-                                                                {req.status === 'Asignado' && isSelected && (
-                                                                     <span className="ml-2 bg-indigo-500 text-xs px-2 rounded-full border border-indigo-400 text-white">Pre-asignada</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-sm space-y-1">
-                                                                {req.items?.map((item, idx) => (
-                                                                    <div key={idx} className="flex gap-2">
-                                                                        <span className="font-bold">{item.quantity_requested} {item.unit_measure || 'un.'}</span>
-                                                                        <span className={isSelected ? 'text-indigo-100' : 'text-slate-600'}>{item.description}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-white bg-indigo-500' : 'border-indigo-300'}`}>
-                                                            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </details>
-                            )}
-
-                            {/* Read-Only Completed Requests List */}
-                            {pendingRequests.filter(req => req.status === 'Completado' && selectedRequestIds.includes(req.id)).length > 0 && (
-                                <div className="mt-4 pt-4 border-t border-indigo-200">
-                                    <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                        Materiales Ya Entregados / Completados
-                                    </h4>
-                                    <div className="space-y-2">
-                                        {pendingRequests.filter(req => req.status === 'Completado' && selectedRequestIds.includes(req.id)).map(req => (
-                                            <div key={req.id} className="p-3 rounded-lg border border-green-200 bg-green-50 opacity-90 cursor-default">
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <div className="text-xs font-mono mb-1 flex items-center gap-2 text-green-700">
-                                                            <span>ID: {req.id.substring(0, 8).toUpperCase()}</span>
-                                                            <span>•</span>
-                                                            <span>Por: {req.user_name || req.user_id}</span>
-                                                            <span className="ml-2 bg-green-200 text-green-800 text-xs px-2 rounded-full border border-green-300">Inventario Descontado</span>
-                                                        </div>
-                                                        <div className="text-sm space-y-1 text-slate-700">
-                                                            {req.items?.map((item, idx) => (
-                                                                <div key={idx} className="flex gap-2">
-                                                                    <span className="font-bold text-green-800">{item.quantity_requested} {item.unit_measure || 'un.'}</span>
-                                                                    <span>{item.description}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    {/* Botón sutil por si el usuario DE VERDAD necesita desvincularla por error, devolviendo inventario! */}
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (window.confirm('¿Desvincular esta solicitud completada? ESTO DEVOLVERÁ ESTOS MATERIALES AL INVENTARIO. Úsalo solo para corregir errores graves.')) {
-                                                                setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
-                                                            }
-                                                        }}
-                                                        className="text-xs text-red-500 hover:text-red-700 border border-red-200 rounded px-2 py-1 flex items-center gap-1 hover:bg-red-50 transition"
-                                                    >
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                                        Revertir
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-2">*{' '}Estas solicitudes ya no pueden desmarcarse accidentalmente. Si se revierten, el stock retornará al almacén de forma automática al guardar la OT.</p>
-                                </div>
-                            )}
-                        </div>
 
                         {/* Materiales Directos */}
                         <div className="mb-6 p-4 border border-amber-200 bg-amber-50 rounded-lg">
@@ -837,21 +732,44 @@ const WorkOrderEdit = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-slate-200">
                         <button
                             type="button"
                             onClick={() => navigate(`/work-orders/${id}`)}
-                            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                            className="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 font-bold transition-colors"
                         >
                             Cancelar
                         </button>
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={(e) => handleSubmit(e, formData.status)}
                             disabled={saving}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center hover:bg-blue-700 disabled:bg-blue-300"
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-bold shadow-sm disabled:opacity-50 transition-colors"
                         >
-                            <Save size={20} className="mr-2" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
+                            Guardar
                         </button>
+                        
+                        {(formData.status === 'ABIERTA' || formData.status === 'EN_PROCESO') && (
+                            <button
+                                type="button"
+                                onClick={(e) => handleSubmit(e, 'PENDIENTE_MATERIALES')}
+                                disabled={saving}
+                                className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 font-bold shadow-sm disabled:opacity-50 transition-colors"
+                            >
+                                Guardar y Falta Material
+                            </button>
+                        )}
+
+                        {formData.status !== 'CERRADA' && (
+                            <button
+                                type="button"
+                                onClick={(e) => handleSubmit(e, 'CERRADA')}
+                                disabled={saving}
+                                className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold shadow-sm flex items-center justify-center disabled:opacity-50 transition-colors"
+                            >
+                                {saving ? 'Guardando...' : 'Guardar y Cerrar OT'}
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>

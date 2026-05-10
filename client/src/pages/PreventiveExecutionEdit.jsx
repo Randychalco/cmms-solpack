@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Calendar, Clock, Save, ArrowLeft, 
     User, Users, Settings, Package, HardDrive, 
-    AlertTriangle, CheckCircle, Activity 
+    AlertTriangle, CheckCircle, Activity, Search, Trash2 
 } from 'lucide-react';
 import SignaturePad from '../components/SignaturePad';
 
@@ -59,6 +59,7 @@ const PreventiveExecutionEdit = () => {
     });
 
     const [newSpareId, setNewSpareId] = useState('');
+    const [spareSearch, setSpareSearch] = useState('');
     const [newSpareQty, setNewSpareQty] = useState(1);
 
     useEffect(() => {
@@ -229,9 +230,15 @@ const PreventiveExecutionEdit = () => {
     };
 
     const addSpare = () => {
-        if (!newSpareId) return;
-        const spare = inventory.find(i => i.id === parseInt(newSpareId));
+        const spare = inventory.find(i => i.name === spareSearch || i.id === parseInt(newSpareId));
         if (!spare) return;
+        
+        // Prevent duplicates
+        if (formData.spare_results.some(s => s.inventory_id === spare.id)) {
+            alert('Este material ya ha sido agregado.');
+            return;
+        }
+
         setFormData({
             ...formData,
             spare_results: [...formData.spare_results, {
@@ -243,6 +250,7 @@ const PreventiveExecutionEdit = () => {
             }]
         });
         setNewSpareId('');
+        setSpareSearch('');
         setNewSpareQty(1);
     };
 
@@ -570,30 +578,67 @@ const PreventiveExecutionEdit = () => {
                     </div>
                 </section>
 
-                {/* 5. REPUESTOS (RESUMEN) */}
-                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                     <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-slate-800">
-                        <Package size={20} /> 5. Resumen de Repuestos y Materiales
+                {/* 5. REPUESTOS Y MATERIALES */}
+                <section className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                        <Package className="text-amber-600" size={24} /> 5. Recambios y Materiales Usados
                     </h2>
-                    <div className="grid grid-cols-1 gap-8">
-                        <div>
-                             <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">MATERIALES UTILIZADOS</h4>
-                             <div className="space-y-2 mb-4">
-                                {formData.spare_results.map(s => (
-                                    <div key={s.id} className="flex justify-between items-center bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs">
-                                        <span className="font-bold text-amber-900">{s.name} x {s.used_quantity}</span>
-                                        <button type="button" onClick={() => setFormData({...formData, spare_results: formData.spare_results.filter(x => x.id !== s.id)})} className="text-red-500 font-black uppercase text-[10px]">Quitar</button>
-                                    </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-3 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input 
+                                type="text"
+                                placeholder="Buscar material por nombre o código..."
+                                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                value={spareSearch}
+                                onChange={(e) => setSpareSearch(e.target.value)}
+                                list="inventory-list"
+                            />
+                            <datalist id="inventory-list">
+                                {inventory.map(i => (
+                                    <option key={i.id} value={i.name}>{i.code || ''}</option>
                                 ))}
-                             </div>
-                             <div className="flex gap-2">
-                                <select className="flex-1 border p-2 rounded-lg text-xs" value={newSpareId} onChange={e => setNewSpareId(e.target.value)}>
-                                    <option value="">Seleccione material...</option>
-                                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-                                </select>
-                                <button type="button" onClick={addSpare} className="bg-amber-500 text-white px-4 rounded-lg font-black text-xs uppercase">Añadir</button>
-                             </div>
+                            </datalist>
                         </div>
+                        <input 
+                            type="number"
+                            className="w-full md:w-24 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-center focus:ring-2 focus:ring-amber-500 outline-none"
+                            value={newSpareQty}
+                            onChange={(e) => setNewSpareQty(e.target.value)}
+                            min="1"
+                        />
+                        <button 
+                            type="button"
+                            onClick={addSpare}
+                            className="bg-[#e2c19d] hover:bg-[#d4b08c] text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-md active:scale-95"
+                        >
+                            REGISTRAR
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {formData.spare_results.length === 0 ? (
+                            <div className="col-span-full text-center py-6 text-slate-400 font-bold italic border-2 border-dashed border-slate-100 rounded-2xl">
+                                No hay materiales registrados aún
+                            </div>
+                        ) : (
+                            formData.spare_results.map(s => (
+                                <div key={s.id} className="flex justify-between items-center p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-amber-200 transition-all group">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-slate-700">{s.name}</span>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">CANTIDAD UTILIZADA: {s.used_quantity}</span>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setFormData({...formData, spare_results: formData.spare_results.filter(x => x.id !== s.id)})}
+                                        className="text-slate-300 hover:text-red-500 p-2 transition-colors"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </section>
 

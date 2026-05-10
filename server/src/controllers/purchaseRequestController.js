@@ -95,3 +95,21 @@ exports.updatePurchaseRequestStatus = async (req, res) => {
         res.status(500).json({ message: 'Error updating status: ' + error.message });
     }
 };
+
+// Eliminar un pedido
+exports.deletePurchaseRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const request = await PurchaseRequest.findByPk(id);
+
+        if (!request) {
+            return res.status(404).json({ message: 'Pedido de compra no encontrado' });
+        }
+
+        await request.destroy();
+        res.json({ message: 'Pedido de compra eliminado correctamente' });
+    } catch (error) {
+        console.error('Error deleting purchase request:', error);
+        res.status(500).json({ message: 'Error al eliminar el pedido de compra' });
+    }
+};

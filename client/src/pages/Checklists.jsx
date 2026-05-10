@@ -92,7 +92,7 @@ const Checklists = () => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={() => navigate('/checklists/executions')}
+                        onClick={() => navigate('/checklists/executions?type=maintenance')}
                         className="bg-indigo-600 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl shadow-lg flex items-center gap-2 hover:bg-indigo-700 transition-all hover:scale-105"
                     >
                         <History size={18} /> <span className="hidden md:inline font-semibold">Ver Historial</span>

@@ -14,6 +14,7 @@ const PreventiveExecution = require('./PreventiveExecution');
 const StandardTask = require('./StandardTask');
 const ChecklistTemplate = require('./ChecklistTemplate');
 const ChecklistExecution = require('./ChecklistExecution');
+const MaintenanceNotification = require('./MaintenanceNotification');
 
 // StandardTask associations
 Machine.hasMany(StandardTask, { foreignKey: 'machine_id' });
@@ -69,6 +70,25 @@ const syncDatabase = async () => {
         // WorkOrder <-> User
         WorkOrder.belongsTo(User, { as: 'Requester', foreignKey: 'requester_id' });
 
+        // MaintenanceNotification Associations
+        Plant.hasMany(MaintenanceNotification, { foreignKey: 'plant_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(Plant, { foreignKey: 'plant_id' });
+
+        Area.hasMany(MaintenanceNotification, { foreignKey: 'area_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(Area, { foreignKey: 'area_id' });
+
+        Machine.hasMany(MaintenanceNotification, { foreignKey: 'machine_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(Machine, { foreignKey: 'machine_id' });
+
+        SubMachine.hasMany(MaintenanceNotification, { foreignKey: 'sub_machine_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(SubMachine, { foreignKey: 'sub_machine_id' });
+
+        User.hasMany(MaintenanceNotification, { foreignKey: 'requester_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(User, { as: 'Requester', foreignKey: 'requester_id' });
+
+        WorkOrder.hasOne(MaintenanceNotification, { foreignKey: 'work_order_id', onDelete: 'SET NULL' });
+        MaintenanceNotification.belongsTo(WorkOrder, { foreignKey: 'work_order_id' });
+
         // User <-> PurchaseRequest
         User.hasMany(PurchaseRequest, { foreignKey: 'requester_id', onDelete: 'SET NULL' });
         PurchaseRequest.belongsTo(User, { as: 'Requester', foreignKey: 'requester_id' });
@@ -113,5 +133,6 @@ module.exports = {
     StandardTask,
     ChecklistTemplate,
     ChecklistExecution,
+    MaintenanceNotification,
     syncDatabase,
 };

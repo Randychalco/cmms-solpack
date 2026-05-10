@@ -86,3 +86,21 @@ exports.receiveRepair = async (req, res) => {
         res.status(500).json({ message: 'Error updating repair record.' });
     }
 };
+
+// Eliminar un registro de reparación
+exports.deleteRepair = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const repair = await RepairRecord.findByPk(id);
+
+        if (!repair) {
+            return res.status(404).json({ message: 'Registro de reparación no encontrado' });
+        }
+
+        await repair.destroy();
+        res.json({ message: 'Registro de reparación eliminado correctamente' });
+    } catch (error) {
+        console.error('Error deleting repair record:', error);
+        res.status(500).json({ message: 'Error al eliminar el registro de reparación' });
+    }
+};

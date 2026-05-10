@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { ArrowLeft, Trash, Eye, FileSpreadsheet, FileText, Search } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -7,6 +7,9 @@ import * as XLSX from 'xlsx';
 
 const ChecklistExecutionsList = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const filterType = searchParams.get('type'); // 'maintenance' or 'safety'
+    
     const [executions, setExecutions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -48,27 +51,38 @@ const ChecklistExecutionsList = () => {
         }
     };
 
-    const filteredExecutions = executions.filter(exec =>
-        (exec.template_name && exec.template_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    const filteredExecutions = executions.filter(exec => {
+        // First filter by type if parameter exists
+        if (filterType && exec.template_type !== filterType) return false;
+        // Then apply search term
+        const matchesSearch = (exec.template_name && exec.template_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (exec.ticket_number && exec.ticket_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (exec.executed_by_name && exec.executed_by_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+        (exec.executed_by_name && exec.executed_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        return matchesSearch;
+    });
+
+    const pageTitle = filterType === 'safety' ? 'Historial de Seguridad' : 
+                     filterType === 'maintenance' ? 'Historial de Checklists' : 
+                     'Historial General';
+
+    const backPath = filterType === 'safety' ? '/safety-checklists' : '/checklists';
 
     if (loading) return <div className="p-8 text-center text-slate-500">Cargando historial...</div>;
 
     return (
         <div className="bg-slate-50 min-h-screen pb-20">
             {/* Header */}
-            <div className="bg-slate-900 text-white p-6 shadow-md border-b-4 border-indigo-600">
+            <div className={`bg-slate-900 text-white p-6 shadow-md border-b-4 ${filterType === 'safety' ? 'border-red-600' : 'border-indigo-600'}`}>
                 <div className="max-w-7xl mx-auto flex items-center gap-4">
-                    <button onClick={() => navigate('/checklists')} className="hover:bg-slate-800 p-2 rounded-full transition-colors">
+                    <button onClick={() => navigate(backPath)} className="hover:bg-slate-800 p-2 rounded-full transition-colors">
                         <ArrowLeft size={24} />
                     </button>
                     <div>
                         <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
-                            Historial de Checklists
-                            <span className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-full font-bold">
-                                {executions.length} Registros
+                            {pageTitle}
+                            <span className={`${filterType === 'safety' ? 'bg-red-600' : 'bg-indigo-600'} text-white text-xs px-3 py-1 rounded-full font-bold`}>
+                                {filteredExecutions.length} Registros
                             </span>
                         </h1>
                         <p className="text-slate-400 text-sm mt-1">

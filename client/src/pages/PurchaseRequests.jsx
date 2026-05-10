@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Search, Layers, Calendar, Edit, Truck, CheckCircle, Package, Download } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Layers, Calendar, Edit, Truck, CheckCircle, Package, Download, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -147,6 +147,23 @@ const PurchaseRequests = () => {
             po_number: request.po_number || ''
         });
         setIsStatusModalOpen(true);
+    };
+
+    const handleDeleteRequest = async (id, partName) => {
+        if (user.role !== 'admin' && user.role !== 'supervisor') {
+            alert('No tienes permisos para eliminar registros.');
+            return;
+        }
+
+        if (window.confirm(`¿Estás seguro de que deseas eliminar el pedido de "${partName}"? Esta acción no se puede deshacer.`)) {
+            try {
+                await api.delete(`/purchase-requests/${id}`);
+                setRequests(requests.filter(r => r.id !== id));
+            } catch (err) {
+                console.error('Error deleting purchase request:', err);
+                alert('Error al eliminar el pedido de compra.');
+            }
+        }
     };
 
     const getStatusColor = (status) => {
@@ -328,12 +345,23 @@ const PurchaseRequests = () => {
                                             )}
                                         </td>
                                         <td className="p-4 text-center">
-                                            <button
-                                                onClick={() => openStatusModal(request)}
-                                                className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded text-sm font-medium transition border border-blue-200 hover:border-blue-600 flex items-center justify-center gap-1 w-full"
-                                            >
-                                                <Edit size={14} /> Gestionar
-                                            </button>
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => openStatusModal(request)}
+                                                    className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded text-sm font-medium transition border border-blue-200 hover:border-blue-600 flex items-center justify-center gap-1 flex-1"
+                                                >
+                                                    <Edit size={14} /> Gestionar
+                                                </button>
+                                                {(user.role === 'admin' || user.role === 'supervisor') && (
+                                                    <button
+                                                        onClick={() => handleDeleteRequest(request.id, request.part_name)}
+                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors border border-red-100 hover:border-red-300"
+                                                        title="Eliminar registro"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

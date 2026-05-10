@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { 
     Calendar, Clock, CheckCircle, Package, Users, 
     FileText, Download, Edit, ArrowLeft, Activity,
-    Shield, MapPin, HardDrive, Check, Save
+    Shield, MapPin, HardDrive, Check, Save, Search, Trash2, Trash
 } from 'lucide-react';
 import SignaturePad from '../components/SignaturePad';
 
@@ -37,18 +37,29 @@ const PreventiveExecutionDetails = () => {
     const [techName, setTechName] = useState('');
     const [supName, setSupName] = useState('');
 
+    const [inventory, setInventory] = useState([]);
+    const [spareSearch, setSpareSearch] = useState('');
+    const [newSpareQty, setNewSpareQty] = useState(1);
+
     useEffect(() => {
         const loadDetail = async () => {
             try {
-                const res = await api.get(`/preventive/executions/${id}`);
-                setData(res.data);
-                setTaskResults(res.data.task_results || []);
-                setSpareResults(res.data.spare_results || []);
-                setGeneralObs(res.data.general_observations || '');
-                setTechSignature(res.data.technician_signature);
-                setSupSignature(res.data.supervisor_signature);
-                setTechName(res.data.leader_technician_name || '');
-                setSupName(res.data.supervisor_name || '');
+                const [res, invRes] = await Promise.all([
+                    api.get(`/preventive/executions/${id}`),
+                    api.get('/inventory')
+                ]);
+                
+                const execData = res.data;
+                setData(execData);
+                setInventory(invRes.data);
+                
+                setTaskResults(execData.task_results || []);
+                setSpareResults(execData.spare_results || []);
+                setGeneralObs(execData.general_observations || '');
+                setTechSignature(execData.technician_signature);
+                setSupSignature(execData.supervisor_signature);
+                setTechName(execData.leader_technician_name || '');
+                setSupName(execData.supervisor_name || '');
                 setLoading(false);
             } catch (err) {
                 console.error(err);
@@ -57,6 +68,32 @@ const PreventiveExecutionDetails = () => {
         };
         loadDetail();
     }, [id]);
+
+    const addSpare = () => {
+        const spare = inventory.find(i => i.name === spareSearch);
+        if (!spare) {
+            alert('Material no encontrado');
+            return;
+        }
+
+        if (spareResults.some(s => s.inventory_id === spare.id)) {
+            alert('Este material ya ha sido agregado.');
+            return;
+        }
+
+        setSpareResults([...spareResults, {
+            id: Date.now(),
+            inventory_id: spare.id,
+            name: spare.name,
+            used_quantity: parseInt(newSpareQty)
+        }]);
+        setSpareSearch('');
+        setNewSpareQty(1);
+    };
+
+    const removeSpare = (spareId) => {
+        setSpareResults(spareResults.filter(s => s.id !== spareId));
+    };
 
     const handleSave = async (complete = false) => {
         try {
@@ -109,33 +146,34 @@ const PreventiveExecutionDetails = () => {
                 doc.line(pdfWidth - marginX - col3Width, headerY, pdfWidth - marginX - col3Width, headerY + headerHeight);
 
                 doc.setTextColor(165, 71, 58);
-                doc.setFontSize(22);
+                doc.setFontSize(20);
                 doc.setFont('helvetica', 'bold');
-                doc.text('SOLPACK', marginX + (col1Width / 2), headerY + 12, { align: 'center' });
+                doc.text('SOLPACK', marginX + (col1Width / 2), headerY + 13, { align: 'center' });
                 doc.setTextColor(100, 116, 139);
                 doc.setFontSize(7);
                 doc.setFont('helvetica', 'normal');
-                doc.text('SOLUCIONES DE EMBALAJE', marginX + (col1Width / 2), headerY + 18, { align: 'center' });
+                doc.text('SOLUCIONES DE EMBALAJE', marginX + (col1Width / 2), headerY + 19, { align: 'center' });
 
                 doc.setTextColor(0);
+                doc.setFontSize(9);
+                doc.text('REGISTRO', marginX + col1Width + (col2Width / 2), headerY + 8, { align: 'center' });
+                
                 doc.setFontSize(10);
-                doc.text('REGISTRO', marginX + col1Width + (col2Width / 2), headerY + 10, { align: 'center' });
-                doc.line(marginX + col1Width, headerY + 14, pdfWidth - marginX - col3Width, headerY + 14);
-                doc.setFontSize(11);
                 doc.setFont('helvetica', 'bold');
-                doc.text('REPORTE DE MANTENIMIENTO PREVENTIVO', marginX + col1Width + (col2Width / 2), headerY + 20, { align: 'center' });
+                const title = 'ORDEN DE TRABAJO DE MANTENIMIENTO PREVENTIVO';
+                const splitTitle = doc.splitTextToSize(title, col2Width - 6);
+                // Center vertically (0 to 25 = 25 height)
+                const titleY = headerY + 12.5 + (12.5 / 2) - ((splitTitle.length - 1) * 2);
+                doc.text(splitTitle, marginX + col1Width + (col2Width / 2), titleY, { align: 'center' });
 
-                doc.setFontSize(7.5);
+                doc.setFontSize(7);
                 doc.setFont('helvetica', 'normal');
                 const metaX = pdfWidth - marginX - col3Width + 2;
-                doc.text(`Código: MAN-RE-07`, metaX, headerY + 6);
-                doc.text(`Versión: 03`, metaX, headerY + 11);
-                doc.text(`Fecha: ${execution.start_date || '01/01/2026'}`, metaX, headerY + 16);
-                doc.text(`Página: ${pageNum} de ${totalPages}`, metaX, headerY + 21);
-                
-                doc.line(pdfWidth - marginX - col3Width, headerY + 7.5, pdfWidth - marginX, headerY + 7.5);
-                doc.line(pdfWidth - marginX - col3Width, headerY + 12.5, pdfWidth - marginX, headerY + 12.5);
-                doc.line(pdfWidth - marginX - col3Width, headerY + 17.5, pdfWidth - marginX, headerY + 17.5);
+                const rowH = headerHeight / 4;
+                doc.text(`Código: MAN-RE-05`, metaX, headerY + (rowH * 0) + 4.5);
+                doc.text(`Versión: 03`, metaX, headerY + (rowH * 1) + 4.5);
+                doc.text(`Fecha: ${execution.start_date || '01/01/2026'}`, metaX, headerY + (rowH * 2) + 4.5);
+                doc.text(`Página: ${pageNum} de ${totalPages}`, metaX, headerY + (rowH * 3) + 4.5);
             };
 
             const drawFooter = (pageNum, totalPages) => {
@@ -513,25 +551,70 @@ const PreventiveExecutionDetails = () => {
                             )}
                         </section>
 
-                        {/* 4. REPUESTOS Y MATERIALES */}
+                        {/* 5. REPUESTOS Y MATERIALES */}
                         <section className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
                             <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                                <Package className="text-amber-600" size={24} /> 4. Recambios y Materiales
+                                <Package className="text-amber-600" size={24} /> 5. Recambios y Materiales Usados
                             </h3>
-                            {data.spare_results?.length > 0 ? (
+
+                            {!isCompleted && (
+                                <div className="flex flex-col md:flex-row gap-3 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex-1 relative">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input 
+                                            type="text"
+                                            placeholder="Buscar material por nombre o código..."
+                                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                            value={spareSearch}
+                                            onChange={(e) => setSpareSearch(e.target.value)}
+                                            list="inventory-list-details"
+                                        />
+                                        <datalist id="inventory-list-details">
+                                            {inventory.map(i => (
+                                                <option key={i.id} value={i.name}>{i.code || ''}</option>
+                                            ))}
+                                        </datalist>
+                                    </div>
+                                    <input 
+                                        type="number"
+                                        className="w-full md:w-24 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-center focus:ring-2 focus:ring-amber-500 outline-none"
+                                        value={newSpareQty}
+                                        onChange={(e) => setNewSpareQty(e.target.value)}
+                                        min="1"
+                                    />
+                                    <button 
+                                        type="button"
+                                        onClick={addSpare}
+                                        className="bg-[#e2c19d] hover:bg-[#d4b08c] text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-md active:scale-95"
+                                    >
+                                        REGISTRAR
+                                    </button>
+                                </div>
+                            )}
+
+                            {spareResults.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {data.spare_results.map((spare, idx) => (
-                                        <div key={idx} className="flex justify-between items-center p-5 bg-amber-50/50 border border-amber-100 rounded-2xl transition-all hover:bg-amber-100/50">
-                                            <span className="font-bold text-amber-900">{spare.name}</span>
-                                            <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-black">
-                                                {spare.used_quantity} UND
-                                            </span>
+                                    {spareResults.map((spare, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-amber-200 transition-all group">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-700">{spare.name}</span>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">CANTIDAD UTILIZADA: {spare.used_quantity}</span>
+                                            </div>
+                                            {!isCompleted && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => removeSpare(spare.id)}
+                                                    className="text-slate-300 hover:text-red-500 p-2 transition-colors"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
                                 <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-bold italic">No se registraron cambios de repuestos en esta rutina</p>
+                                    <p className="text-slate-400 font-bold italic">No se registraron materiales utilizados</p>
                                 </div>
                             )}
                         </section>

@@ -35,6 +35,7 @@ const WorkOrderChecklist = () => {
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const [templatesList, setTemplatesList] = useState([]);
 
     // Signature State
     const [techSig, setTechSig] = useState('');
@@ -49,7 +50,35 @@ const WorkOrderChecklist = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const { data: templates } = await api.get('/checklists/templates');
+            const { data: rawTemplates } = await api.get('/checklists/templates');
+            
+            // Filter to only count maintenance templates (ignore safety/others as per user request)
+            const maintenanceTemplates = rawTemplates.filter(t => t.type === 'maintenance');
+
+            // Priority sorting logic
+            const getPriority = (t) => {
+                const name = (t.name || '').toUpperCase();
+                const cat = (t.asset_category || '').toUpperCase();
+                
+                if (name.includes('SML') || cat.includes('SML')) return 1; // EXTRUSION
+                if (name.startsWith('R ') || cat.startsWith('R ') || name.includes('REBOBINA')) return 2; // REBOBINADO
+                if (name.startsWith('P ') || cat.startsWith('P ') || name.includes('PREESTIRA')) return 3; // PREESTIRADO
+                if (name.includes('SIAT') || name.includes('WEBTEC') || name.includes('TUCO') || name.includes('CORTADORA')) return 4; // CINTAS
+                if (name.includes('FAJA') || name.includes('HUSILLO') || name.includes('WEIMA') || name.includes('LINDNER') || 
+                    name.includes('TINA') || name.includes('LAVADORA') || name.includes('EXPRIMIDOR') || 
+                    name.includes('SOPLADOR') || name.includes('SILO') || name.includes('BEIER')) return 5; // LINEA BEIER
+                if (name.includes('EREMA') || cat.includes('EREMA')) return 6; // PELETIZADOR
+                return 100;
+            };
+
+            const sortedTemplates = [...maintenanceTemplates].sort((a, b) => {
+                const pA = getPriority(a);
+                const pB = getPriority(b);
+                if (pA !== pB) return pA - pB;
+                return a.id - b.id; // Secondary sort by ID
+            });
+
+            setTemplatesList(sortedTemplates);
             let targetTemplate = null;
 
             if (executionId) {
@@ -69,14 +98,14 @@ const WorkOrderChecklist = () => {
                         const { data: woData } = await api.get(`/work-orders/${existingExecution.wo_id}`);
                         setWo(woData);
                     }
-                    targetTemplate = templates.find(t => t.id === existingExecution.template_id);
+                    targetTemplate = sortedTemplates.find(t => t.id === existingExecution.template_id);
                 }
             } else if (templateId) {
-                targetTemplate = templates.find(t => t.id === parseInt(templateId));
+                targetTemplate = sortedTemplates.find(t => t.id === parseInt(templateId));
             } else if (id) {
                 const { data: woData } = await api.get(`/work-orders/${id}`);
                 setWo(woData);
-                targetTemplate = templates.find(t => t.layout === 'sml2_matrix') || templates[0];
+                targetTemplate = sortedTemplates.find(t => t.layout === 'sml2_matrix') || sortedTemplates[0];
             }
 
             if (targetTemplate) {
@@ -165,7 +194,11 @@ const WorkOrderChecklist = () => {
             alert('Checklist guardado con éxito');
 
             if (templateId) {
-                navigate('/checklists');
+                if (template.type === 'safety') {
+                    navigate('/safety');
+                } else {
+                    navigate('/checklists');
+                }
             } else {
                 navigate(`/work-orders/${id}`);
             }
@@ -188,6 +221,10 @@ const WorkOrderChecklist = () => {
             const marginBottom = 25;
 
             const drawHeader = () => {
+                // Determine dynamic code
+                const templateIndex = templatesList.findIndex(t => t.id === template.id);
+                const dynamicCode = `MAN-RE-03.${templateIndex !== -1 ? templateIndex + 1 : 1}`;
+
                 pdf.setDrawColor(0);
                 pdf.setLineWidth(0.3);
                 pdf.rect(10, 10, 50, 20);
@@ -211,9 +248,9 @@ const WorkOrderChecklist = () => {
                 pdf.setFontSize(8);
                 pdf.setFont("helvetica", "normal");
                 pdf.setTextColor(0);
-                pdf.text('Código: MAN-RE-07', 152, 14);
+                pdf.text(`Código: ${dynamicCode}`, 152, 14);
                 pdf.text('Versión: 03', 152, 19);
-                pdf.text('Fecha: 1/01/2026', 152, 24);
+                pdf.text(`Fecha: ${execution?.date ? new Date(execution.date).toLocaleDateString('es-PE') : new Date().toLocaleDateString('es-PE')}`, 152, 24);
             };
 
             const drawFooter = (pageNum, totalPages) => {
@@ -684,9 +721,14 @@ const WorkOrderChecklist = () => {
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button onClick={() => {
-                            if (executionId) navigate('/checklists/executions');
-                            else if (templateId) navigate('/checklists');
-                            else navigate(`/work-orders/${id}`);
+                            if (executionId) {
+                                navigate(`/checklists/executions?type=${template?.type || 'maintenance'}`);
+                            } else if (templateId) {
+                                if (template?.type === 'safety') navigate('/safety');
+                                else navigate('/checklists');
+                            } else {
+                                navigate(`/work-orders/${id}`);
+                            }
                         }} className="hover:bg-slate-800 p-2 rounded-full transition-colors z-10">
                             <ArrowLeft size={24} />
                         </button>

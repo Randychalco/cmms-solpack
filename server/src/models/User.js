@@ -24,6 +24,9 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: 'technician',
+        validate: {
+            isIn: [['admin', 'supervisor', 'planner', 'technician', 'production', 'reader']],
+        }
     },
     status: {
         type: DataTypes.STRING(20),

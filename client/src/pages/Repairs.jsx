@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { PenTool, Plus, Search, CheckCircle, Package, ArrowLeft, ArrowRight, Truck, Download } from 'lucide-react';
+import { PenTool, Plus, Search, CheckCircle, Package, ArrowLeft, ArrowRight, Truck, Download, Trash2 } from 'lucide-react';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const Repairs = () => {
     const [repairs, setRepairs] = useState([]);
@@ -11,6 +12,7 @@ const Repairs = () => {
     const [error, setError] = useState(null);
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+    const { user } = useAuth();
 
     // Modals state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -144,6 +146,23 @@ const Repairs = () => {
     const openReceiveModal = (repair) => {
         setSelectedRepair(repair);
         setIsReceiveModalOpen(true);
+    };
+
+    const handleDeleteRepair = async (id, partName) => {
+        if (user.role !== 'admin' && user.role !== 'supervisor') {
+            alert('No tienes permisos para eliminar registros.');
+            return;
+        }
+
+        if (window.confirm(`¿Estás seguro de que deseas eliminar el registro de reparación de "${partName}"? Esta acción no se puede deshacer.`)) {
+            try {
+                await api.delete(`/repairs/${id}`);
+                setRepairs(repairs.filter(r => r.id !== id));
+            } catch (err) {
+                console.error('Error deleting repair:', err);
+                alert('Error al eliminar el registro de reparación.');
+            }
+        }
     };
 
     const handleExportExcel = async () => {
@@ -294,14 +313,25 @@ const Repairs = () => {
                                             )}
                                         </td>
                                         <td className="p-4 text-center">
-                                            {repair.status === 'ENVIADO' && (
-                                                <button
-                                                    onClick={() => openReceiveModal(repair)}
-                                                    className="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-sm font-medium transition border border-emerald-200 hover:border-emerald-600 flex items-center gap-1 w-full justify-center"
-                                                >
-                                                    <CheckCircle size={14} /> Recibir
-                                                </button>
-                                            )}
+                                            <div className="flex gap-2 justify-center">
+                                                {repair.status === 'ENVIADO' && (
+                                                    <button
+                                                        onClick={() => openReceiveModal(repair)}
+                                                        className="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-sm font-medium transition border border-emerald-200 hover:border-emerald-600 flex items-center gap-1 flex-1 justify-center"
+                                                    >
+                                                        <CheckCircle size={14} /> Recibir
+                                                    </button>
+                                                )}
+                                                {(user.role === 'admin' || user.role === 'supervisor') && (
+                                                    <button
+                                                        onClick={() => handleDeleteRepair(repair.id, repair.part_name)}
+                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors border border-red-100 hover:border-red-300"
+                                                        title="Eliminar registro"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

@@ -81,7 +81,7 @@ const getExecutions = async (req, res) => {
         const result = await db.query(`
             SELECT 
                 ce.id, ce.date, ce.overall_status, ce.observation,
-                ct.name as template_name,
+                ct.name as template_name, ct.type as template_type,
                 wo.ticket_number, wo.id as wo_id,
                 u.name as executed_by_name
             FROM checklist_executions ce

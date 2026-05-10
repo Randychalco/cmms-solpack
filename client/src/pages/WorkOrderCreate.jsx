@@ -81,6 +81,10 @@ const WorkOrderCreate = () => {
     const [pendingRequests, setPendingRequests] = useState([]);
     const [selectedRequestIds, setSelectedRequestIds] = useState([]);
 
+    // Direct spare parts / materials used
+    const [spareItems, setSpareItems] = useState([]);
+    const [newSpare, setNewSpare] = useState({ description: '', quantity: '', unit: 'UN' });
+
     // We will call fetch data in useEffects *below* the function declarations
 
     const fetchPlants = async () => {
@@ -196,8 +200,20 @@ const WorkOrderCreate = () => {
 
 
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, targetStatus) => {
+        if (e) e.preventDefault();
+        const finalStatus = targetStatus || 'ABIERTA';
+
+        // Validate required fields for closing
+        if (finalStatus === 'CERRADA') {
+            if (!formData.action_taken || !formData.end_date || !formData.end_time ||
+                !formData.technician_signature || !formData.operator_signature) {
+                setError('Para CERRAR la OT debes completar: Acción Realizada, Fecha y Hora de Término, y ambas Firmas.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+        }
+
         setLoading(true);
         setError('');
 
@@ -209,10 +225,13 @@ const WorkOrderCreate = () => {
             // Map criticality back to priority
             if (cleanedData.criticality) cleanedData.priority = cleanedData.criticality;
 
-            // Handle Materials (we don't send manual materials anymore)
-            cleanedData.materials_used = null;
+            // Attach status
+            cleanedData.status = finalStatus;
 
-            // Also attach selected material requests
+            // Attach direct spare parts used
+            cleanedData.materials_used = spareItems.length > 0 ? JSON.stringify(spareItems) : null;
+
+            // Attach selected material requests
             if (selectedRequestIds.length > 0) {
                 cleanedData.material_request_ids = selectedRequestIds;
             }
@@ -536,71 +555,71 @@ const WorkOrderCreate = () => {
                             <p className="text-xs text-gray-500 mt-1">Seleccione un técnico para agregarlo a la lista.</p>
                         </div>
 
-                        {/* 11.5 Material Requests pending attach */}
-                        <div className="mb-6 p-4 border border-indigo-200 bg-indigo-50 rounded-lg">
-                            <label className="block text-indigo-900 font-bold mb-2">SOLICITUDES DE MATERIALES EN PROCESO</label>
-                            <p className="text-sm text-indigo-700 mb-3">Vincula solicitudes creadas previas a esta Orden de Trabajo.</p>
 
-                            {pendingRequests.length === 0 ? (
-                                <p className="text-sm text-indigo-400 italic">No hay solicitudes en proceso actualmente.</p>
-                            ) : (
-                                <details className="group bg-white border border-indigo-200 rounded-lg shadow-sm">
-                                    <summary className="p-3 cursor-pointer select-none list-none flex justify-between items-center bg-indigo-50 rounded-lg group-open:rounded-b-none group-open:border-b border-indigo-200 hover:bg-indigo-100 transition-colors">
-                                        <span className="font-bold text-indigo-900">
-                                            {selectedRequestIds.length === 0
-                                                ? 'Seleccionar solicitudes...'
-                                                : `${selectedRequestIds.length} solicitud(es) seleccionada(s)`}
-                                        </span>
-                                        <span className="transition duration-300 group-open:rotate-180">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
-                                                <polyline points="6 9 12 15 18 9"></polyline>
-                                            </svg>
-                                        </span>
-                                    </summary>
-                                    <div className="p-3 space-y-2 max-h-60 overflow-y-auto bg-slate-50/50">
-                                        {pendingRequests.map(req => {
-                                            const isSelected = selectedRequestIds.includes(req.id);
-                                            return (
-                                                <div
-                                                    key={req.id}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-indigo-200 hover:border-indigo-400'}`}
-                                                    onClick={() => {
-                                                        if (isSelected) {
-                                                            setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
-                                                        } else {
-                                                            setSelectedRequestIds(prev => [...prev, req.id]);
-                                                        }
-                                                    }}
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <div className={`text-xs font-mono mb-1 flex items-center gap-2 ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
-                                                                <span>ID: {req.id.substring(0, 8).toUpperCase()}</span>
-                                                                <span>•</span>
-                                                                <span>Por: {req.user_name}</span>
-                                                            </div>
-                                                            <div className="text-sm space-y-1">
-                                                                {req.items?.map((item, idx) => (
-                                                                    <div key={idx} className="flex gap-2">
-                                                                        <span className="font-bold">{item.quantity_requested} {item.unit_measure || 'un.'}</span>
-                                                                        <span className={isSelected ? 'text-indigo-100' : 'text-slate-600'}>{item.description}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-white bg-indigo-500' : 'border-indigo-300'}`}>
-                                                            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </details>
+
+                        {/* Materiales / Repuestos Utilizados */}
+                        <div className="mb-6 p-4 border border-amber-200 bg-amber-50 rounded-lg">
+                            <label className="block text-amber-900 font-bold mb-1">MATERIALES / REPUESTOS UTILIZADOS</label>
+                            <p className="text-xs text-amber-700 mb-3">Registra aquí los repuestos consumidos durante la intervención. El stock se descontará automáticamente al cerrar la OT.</p>
+
+                            {/* Item list */}
+                            {spareItems.length > 0 && (
+                                <div className="mb-3 space-y-2">
+                                    {spareItems.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-white border border-amber-200 rounded-lg p-2">
+                                            <span className="text-sm font-bold text-amber-800 w-12 text-center shrink-0">{item.quantity} {item.unit}</span>
+                                            <span className="text-sm text-slate-700 flex-1">{item.description}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSpareItems(prev => prev.filter((_, i) => i !== idx))}
+                                                className="text-red-400 hover:text-red-600 transition"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
+
+                            {/* Add new item row */}
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Descripción del material..."
+                                    className="flex-1 border border-amber-300 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                                    value={newSpare.description}
+                                    onChange={(e) => setNewSpare(prev => ({ ...prev, description: e.target.value.toUpperCase() }))}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Cant."
+                                    className="w-20 border border-amber-300 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                                    value={newSpare.quantity}
+                                    onChange={(e) => setNewSpare(prev => ({ ...prev, quantity: e.target.value }))}
+                                    min="0"
+                                />
+                                <select
+                                    className="w-24 border border-amber-300 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                                    value={newSpare.unit}
+                                    onChange={(e) => setNewSpare(prev => ({ ...prev, unit: e.target.value }))}
+                                >
+                                    {['UN', 'KG', 'LT', 'MT', 'GL', 'PZA', 'RLL', 'CJA'].map(u => (
+                                        <option key={u} value={u}>{u}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!newSpare.description.trim() || !newSpare.quantity) return;
+                                        setSpareItems(prev => [...prev, { ...newSpare, quantity: parseFloat(newSpare.quantity) }]);
+                                        setNewSpare({ description: '', quantity: '', unit: 'UN' });
+                                    }}
+                                    className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-amber-600 transition shrink-0"
+                                >
+                                    + Agregar
+                                </button>
+                            </div>
                         </div>
-
-
 
                         {/* 13. Observación */}
                         <div className="mb-4">
@@ -655,20 +674,44 @@ const WorkOrderCreate = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-slate-200">
                         <button
                             type="button"
                             onClick={() => navigate('/work-orders')}
-                            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                            className="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 font-bold transition-colors"
                         >
                             Cancelar
                         </button>
+
+                        {/* Crear OT abierta (comportamiento original) */}
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={(e) => handleSubmit(e, 'ABIERTA')}
                             disabled={loading}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center hover:bg-blue-700 disabled:bg-blue-300"
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-bold shadow-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                         >
-                            <Save size={20} className="mr-2" /> {loading ? 'Guardando...' : 'Crear Orden'}
+                            <Save size={18} />
+                            {loading ? 'Guardando...' : 'Crear OT'}
+                        </button>
+
+                        {/* Crear con falta de material */}
+                        <button
+                            type="button"
+                            onClick={(e) => handleSubmit(e, 'PENDIENTE_MATERIALES')}
+                            disabled={loading}
+                            className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 font-bold shadow-sm disabled:opacity-50 transition-colors"
+                        >
+                            ⚠️ Crear y Falta Material
+                        </button>
+
+                        {/* Crear y cerrar en un solo paso */}
+                        <button
+                            type="button"
+                            onClick={(e) => handleSubmit(e, 'CERRADA')}
+                            disabled={loading}
+                            className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold shadow-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                            ✅ {loading ? 'Guardando...' : 'Crear y Cerrar OT'}
                         </button>
                     </div>
                 </form>

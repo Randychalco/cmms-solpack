@@ -321,11 +321,26 @@ const WorkOrderDetails = () => {
 
 
     const handleStatusChange = async (newStatus) => {
+        if (newStatus === 'CERRADA') {
+            // Check if wo has required fields
+            const missingFields = !wo.action_taken || !wo.end_date || !wo.end_time || !wo.technician_signature || !wo.operator_signature;
+            if (missingFields) {
+                alert('Faltan datos (Acción realizada, fechas, o firmas). Redirigiendo a edición para completar el cierre...');
+                navigate(`/work-orders/${id}/edit`);
+                return;
+            }
+        }
+
         setUpdating(true);
         try {
             await api.put(`/work-orders/${id}/status`, { status: newStatus, note: statusNote });
             setStatusNote('');
             await fetchWO();
+            
+            // Redirect automatically if changing to EN_PROCESO
+            if (newStatus === 'EN_PROCESO') {
+                navigate(`/work-orders/${id}/edit`);
+            }
         } catch (error) {
             alert('Error al actualizar el estado');
         } finally {

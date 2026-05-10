@@ -31,6 +31,7 @@ app.use('/api/material-requests', require('./routes/materialRequestRoutes'));
 app.use('/api/repairs', require('./routes/repairRoutes'));
 app.use('/api/purchase-requests', require('./routes/purchaseRequestRoutes'));
 app.use('/api/preventive', require('./routes/preventiveRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'CMMS Core API is running' });

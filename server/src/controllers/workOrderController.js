@@ -115,25 +115,37 @@ const createWorkOrder = async (req, res) => {
             material_request_ids
         } = req.body;
 
-        // Generate ticket number
-        // Generate ticket number
         const year = new Date().getFullYear();
-        const lastOrder = await WorkOrder.findOne({
+        const ticket_number_prefix = `OT-${year}-`;
+
+        // Find highest existing sequence for this year (handles mixed old/new formats safely)
+        const lastOrderThisYear = await WorkOrder.findOne({
+            where: {
+                ticket_number: { [require('sequelize').Op.like]: `OT-${year}-%` }
+            },
             order: [['id', 'DESC']]
         });
 
         let sequence = 1;
-        if (lastOrder && lastOrder.ticket_number) {
-            const parts = lastOrder.ticket_number.split('-');
-            if (parts.length === 3 && parts[1] === String(year)) {
+        if (lastOrderThisYear && lastOrderThisYear.ticket_number) {
+            const parts = lastOrderThisYear.ticket_number.split('-');
+            // New format: OT-2026-0001 (3 parts)
+            if (parts.length === 3) {
                 const lastSeq = parseInt(parts[2], 10);
-                if (!isNaN(lastSeq)) {
-                    sequence = lastSeq + 1;
-                }
+                if (!isNaN(lastSeq)) sequence = lastSeq + 1;
             }
         }
 
-        const ticket_number = `OT-${year}-${String(sequence).padStart(4, '0')}`;
+        // Keep incrementing until we find a free ticket number
+        let ticket_number = `${ticket_number_prefix}${String(sequence).padStart(4, '0')}`;
+        let attempts = 0;
+        while (attempts < 100) {
+            const existing = await WorkOrder.findOne({ where: { ticket_number } });
+            if (!existing) break;
+            sequence++;
+            ticket_number = `${ticket_number_prefix}${String(sequence).padStart(4, '0')}`;
+            attempts++;
+        }
 
         console.log('--- CREATING OT ---');
         console.log('Tech Sig Length:', req.body.technician_signature ? req.body.technician_signature.length : 'NULL');
