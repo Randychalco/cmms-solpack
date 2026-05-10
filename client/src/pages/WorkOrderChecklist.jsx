@@ -52,9 +52,6 @@ const WorkOrderChecklist = () => {
             setLoading(true);
             const { data: rawTemplates } = await api.get('/checklists/templates');
             
-            // Filter to only count maintenance templates (ignore safety/others as per user request)
-            const maintenanceTemplates = rawTemplates.filter(t => t.type === 'maintenance');
-
             // Priority sorting logic
             const getPriority = (t) => {
                 const name = (t.name || '').toUpperCase();
@@ -71,14 +68,16 @@ const WorkOrderChecklist = () => {
                 return 100;
             };
 
-            const sortedTemplates = [...maintenanceTemplates].sort((a, b) => {
-                const pA = getPriority(a);
-                const pB = getPriority(b);
-                if (pA !== pB) return pA - pB;
-                return a.id - b.id; // Secondary sort by ID
-            });
+            const maintenanceTemplates = rawTemplates
+                .filter(t => t.type === 'maintenance')
+                .sort((a, b) => {
+                    const pA = getPriority(a);
+                    const pB = getPriority(b);
+                    if (pA !== pB) return pA - pB;
+                    return a.id - b.id;
+                });
 
-            setTemplatesList(sortedTemplates);
+            setTemplatesList(maintenanceTemplates);
             let targetTemplate = null;
 
             if (executionId) {
@@ -98,14 +97,14 @@ const WorkOrderChecklist = () => {
                         const { data: woData } = await api.get(`/work-orders/${existingExecution.wo_id}`);
                         setWo(woData);
                     }
-                    targetTemplate = sortedTemplates.find(t => t.id === existingExecution.template_id);
+                    targetTemplate = rawTemplates.find(t => t.id === existingExecution.template_id);
                 }
             } else if (templateId) {
-                targetTemplate = sortedTemplates.find(t => t.id === parseInt(templateId));
+                targetTemplate = rawTemplates.find(t => t.id === parseInt(templateId));
             } else if (id) {
                 const { data: woData } = await api.get(`/work-orders/${id}`);
                 setWo(woData);
-                targetTemplate = sortedTemplates.find(t => t.layout === 'sml2_matrix') || sortedTemplates[0];
+                targetTemplate = rawTemplates.find(t => t.layout === 'sml2_matrix') || rawTemplates[0];
             }
 
             if (targetTemplate) {
@@ -222,8 +221,13 @@ const WorkOrderChecklist = () => {
 
             const drawHeader = () => {
                 // Determine dynamic code
-                const templateIndex = templatesList.findIndex(t => t.id === template.id);
-                const dynamicCode = `MAN-RE-03.${templateIndex !== -1 ? templateIndex + 1 : 1}`;
+                let dynamicCode = '';
+                if (template?.type === 'safety') {
+                    dynamicCode = 'MAN-RE-16';
+                } else {
+                    const templateIndex = templatesList.findIndex(t => t.id === template.id);
+                    dynamicCode = `MAN-RE-03.${templateIndex !== -1 ? templateIndex + 1 : 1}`;
+                }
 
                 pdf.setDrawColor(0);
                 pdf.setLineWidth(0.3);
