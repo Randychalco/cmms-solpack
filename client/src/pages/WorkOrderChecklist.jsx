@@ -42,6 +42,7 @@ const WorkOrderChecklist = () => {
     const [supSig, setSupSig] = useState('');
     const [techName, setTechName] = useState('');
     const [supName, setSupName] = useState('');
+    const [matchingTemplates, setMatchingTemplates] = useState([]);
 
     useEffect(() => {
         loadData();
@@ -106,12 +107,27 @@ const WorkOrderChecklist = () => {
                 setWo(woData);
                 
                 const machineName = woData.Machine?.name || '';
-                // Look for a safety checklist matching the machine, prioritizing non-legacy ones
-                targetTemplate = rawTemplates.find(t => 
-                    t.type === 'safety' && 
-                    t.name.includes(machineName) && 
-                    !t.name.includes('[LEGACY]')
-                ) || rawTemplates.find(t => t.layout === 'matrix' || t.layout === 'sml2_matrix') || rawTemplates[0];
+                const cleanMachineName = machineName.replace(/\s+/g, '').toUpperCase();
+
+                // Find ALL safety checklists for this machine
+                const matching = rawTemplates.filter(t => {
+                    const cleanTName = (t.name || '').replace(/\s+/g, '').toUpperCase();
+                    return t.type === 'safety' && 
+                           cleanTName.includes(cleanMachineName) && 
+                           !t.name.includes('[LEGACY]');
+                });
+
+                setMatchingTemplates(matching);
+
+                if (matching.length === 1) {
+                    targetTemplate = matching[0];
+                } else if (matching.length > 1) {
+                    // We will show selection UI, so leave targetTemplate as null for now
+                    targetTemplate = null;
+                } else {
+                    // Fallback to any matrix or first one
+                    targetTemplate = rawTemplates.find(t => t.layout === 'matrix' || t.layout === 'sml2_matrix') || rawTemplates[0];
+                }
             }
 
             if (targetTemplate) {
@@ -711,13 +727,66 @@ const WorkOrderChecklist = () => {
 
     if (loading) return <div className="p-8 text-center text-slate-500">Cargando checklist...</div>;
 
-    if (!template || template.layout !== 'sml2_matrix') {
+    if (!template) {
+        if (matchingTemplates.length > 0) {
+            return (
+                <div className="bg-slate-50 min-h-screen p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <header className="flex items-center gap-4 mb-8">
+                             <button onClick={() => navigate(`/work-orders/${id}`)} className="p-2 hover:bg-white rounded-full transition-colors shadow-sm">
+                                <ArrowLeft size={24} className="text-slate-600" />
+                            </button>
+                            <div>
+                                <h1 className="text-3xl font-black text-slate-900">Seleccionar Checklist</h1>
+                                <p className="text-slate-500 font-medium">Múltiples checklists de seguridad disponibles para {wo?.Machine?.name}</p>
+                            </div>
+                        </header>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {matchingTemplates.map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => {
+                                        const parsedItems = typeof t.items === 'string' ? JSON.parse(t.items) : t.items;
+                                        setTemplate({ ...t, items: parsedItems });
+                                    }}
+                                    className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-500 hover:shadow-xl transition-all text-left group"
+                                >
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                            <FileText size={24} />
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">SEGURIDAD</span>
+                                    </div>
+                                    <h3 className="text-lg font-black text-slate-800 mb-1 leading-tight">{t.name}</h3>
+                                    <p className="text-sm text-slate-500">Haga clic para comenzar la inspección de este componente.</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="p-8 text-center max-w-2xl mx-auto mt-10">
                 <AlertTriangle className="mx-auto text-orange-500 mb-4" size={48} />
-                <h2 className="text-xl font-bold mb-2">Checklist No Compatible O No Encontrado</h2>
-                <p className="text-slate-600 mb-4">Esta Orden de Trabajo no tiene un checklist matricial asignado.</p>
-                <button onClick={() => navigate(`/work-orders/${id}`)} className="text-blue-600 font-bold hover:underline">
+                <h2 className="text-xl font-bold mb-2">Checklist No Encontrado</h2>
+                <p className="text-slate-600 mb-4">No se pudo cargar la plantilla solicitada.</p>
+                <button onClick={() => navigate(`/work-orders/${id || ''}`)} className="text-blue-600 font-bold hover:underline">
+                    Volver a la Orden
+                </button>
+            </div>
+        );
+    }
+
+    if (template.layout !== 'sml2_matrix' && template.layout !== 'matrix') {
+        return (
+            <div className="p-8 text-center max-w-2xl mx-auto mt-10">
+                <AlertTriangle className="mx-auto text-orange-500 mb-4" size={48} />
+                <h2 className="text-xl font-bold mb-2">Checklist No Compatible</h2>
+                <p className="text-slate-600 mb-4">Esta Orden de Trabajo requiere un formato matricial (SML).</p>
+                <button onClick={() => navigate(`/work-orders/${id || ''}`)} className="text-blue-600 font-bold hover:underline">
                     Volver a la Orden
                 </button>
             </div>
