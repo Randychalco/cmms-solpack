@@ -43,6 +43,7 @@ const WorkOrderChecklist = () => {
     const [techName, setTechName] = useState('');
     const [supName, setSupName] = useState('');
     const [matchingTemplates, setMatchingTemplates] = useState([]);
+    const [safetyTemplatesList, setSafetyTemplatesList] = useState([]);
 
     useEffect(() => {
         loadData();
@@ -78,7 +79,17 @@ const WorkOrderChecklist = () => {
                     return a.id - b.id;
                 });
 
+            const safetyTemplates = rawTemplates
+                .filter(t => t.type === 'safety' && !t.name.includes('[LEGACY]'))
+                .sort((a, b) => {
+                    const pA = getPriority(a);
+                    const pB = getPriority(b);
+                    if (pA !== pB) return pA - pB;
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+
             setTemplatesList(maintenanceTemplates);
+            setSafetyTemplatesList(safetyTemplates);
             let targetTemplate = null;
 
             if (executionId) {
@@ -246,7 +257,8 @@ const WorkOrderChecklist = () => {
                 // Determine dynamic code
                 let dynamicCode = '';
                 if (template?.type === 'safety') {
-                    dynamicCode = 'MAN-RE-16';
+                    const safetyIndex = safetyTemplatesList.findIndex(t => t.id === template.id);
+                    dynamicCode = `MAN-RE-16.${safetyIndex !== -1 ? safetyIndex + 1 : 1}`;
                 } else {
                     const templateIndex = templatesList.findIndex(t => t.id === template.id);
                     dynamicCode = `MAN-RE-03.${templateIndex !== -1 ? templateIndex + 1 : 1}`;
